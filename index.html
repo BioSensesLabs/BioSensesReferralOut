@@ -6,7 +6,7 @@
     <title>Catalogue & Referral Management</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS for Excel Read/Export (Updated CDN) -->
+    <!-- SheetJS for Excel Read/Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -320,6 +320,18 @@
             }
         }
 
+        // --- Helper to safely find row values regardless of casing or extra spaces ---
+        function getVal(row, possibleKeys) {
+            const rowKeys = Object.keys(row);
+            for (let pk of possibleKeys) {
+                const foundKey = rowKeys.find(k => k.trim().toLowerCase() === pk.toLowerCase());
+                if (foundKey !== undefined && row[foundKey] !== undefined) {
+                    return row[foundKey];
+                }
+            }
+            return null;
+        }
+
         // --- Excel Upload: Base Catalogue ---
         function handleBaseExcelUpload(e) {
             const file = e.target.files[0];
@@ -341,12 +353,12 @@
 
                     let count = 0;
                     json.forEach(row => {
-                        const category = row['Category Name'] || row['category'] || row['Category'];
-                        const testName = row['Test Name'] || row['testName'] || row['Test'];
-                        const cost = parseFloat(row['Cost'] || row['cost']);
-                        const baseReferralPrice = parseFloat(row['Base Price'] || row['basePrice'] || row['Base Referral Price']);
-                        const sampleType = row['Sample Type'] || row['sampleType'] || 'Serum';
-                        const tat = row['TAT'] || row['tat'] || 'Daily';
+                        const category = getVal(row, ['Category Name', 'Category', 'category name', 'category']);
+                        const testName = getVal(row, ['Test Name', 'Test', 'test name', 'test']);
+                        const cost = parseFloat(getVal(row, ['Cost', 'cost']));
+                        const baseReferralPrice = parseFloat(getVal(row, ['Base Price', 'Base Referral Price', 'base price', 'base referral price', 'Price']));
+                        const sampleType = getVal(row, ['Sample Type', 'sample type']) || 'Serum';
+                        const tat = getVal(row, ['TAT', 'tat']) || 'Daily';
 
                         if (category && testName && !isNaN(cost) && !isNaN(baseReferralPrice)) {
                             db.ref('baseCatalogue').push({
@@ -496,10 +508,9 @@
                     let missingTests = [];
 
                     json.forEach(row => {
-                        const entityName = row['Entity Name'] || row['entityName'];
-                        const categoryName = row['Category Name'] || row['categoryName'];
-                        const testName = row['Test Name'] || row['testName'];
-                        const referralPrice = parseFloat(row['Referral Price'] || row['referralPrice']);
+                        const entityName = getVal(row, ['Entity Name', 'Entity', 'entity name', 'entity']);
+                        const testName = getVal(row, ['Test Name', 'Test', 'test name', 'test']);
+                        const referralPrice = parseFloat(getVal(row, ['Referral Price', 'Price', 'referral price', 'price']));
 
                         if (entityName && testName && !isNaN(referralPrice)) {
                             const match = baseMap[String(testName).trim().toLowerCase()];
