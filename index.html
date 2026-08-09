@@ -166,8 +166,8 @@
                         <thead>
                             <tr id="matrixHeaderTop" class="bg-gray-100 text-gray-700 font-semibold border-b">
                                 <th class="p-3 border-r" rowspan="2">Test Name</th>
-                                <th class="p-3 border-r text-center" rowspan="2">Cost</th>
-                                <th class="p-3 border-r text-center" rowspan="2">Base Ref</th>
+                                <th class="p-3 border-r text-center bg-gray-50" rowspan="2">Cost</th>
+                                <th class="p-3 border-r text-center bg-gray-50" rowspan="2">Base Ref</th>
                                 <!-- Dynamic entity top headers inserted here -->
                             </tr>
                             <tr id="matrixHeaderSub" class="bg-gray-50 text-gray-600 uppercase tracking-wider border-b">
@@ -184,15 +184,14 @@
 
     <!-- Application Logic -->
     <script>
-        // REPLACE WITH YOUR FIREBASE CONFIGURATION
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyCQ2oWm-qxAJE2D-xBPvfbOXJ7OD1GY1D8",
+            authDomain: "biosensesreferralout.firebaseapp.com",
+            databaseURL: "https://biosensesreferralout-default-rtdb.firebaseio.com",
+            projectId: "biosensesreferralout",
+            storageBucket: "biosensesreferralout.firebasestorage.app",
+            messagingSenderId: "905895559666",
+            appId: "1:905895559666:web:99016e94f4b20a79de2b6b"
         };
 
         firebase.initializeApp(firebaseConfig);
