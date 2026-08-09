@@ -166,8 +166,12 @@
                         <thead>
                             <tr id="matrixHeaderTop" class="bg-gray-100 text-gray-700 font-semibold border-b">
                                 <th class="p-3 border-r" rowspan="2">Test Name</th>
+                                <th class="p-3 border-r text-center" rowspan="2">Cost</th>
+                                <th class="p-3 border-r text-center" rowspan="2">Base Ref</th>
+                                <!-- Dynamic entity top headers inserted here -->
                             </tr>
                             <tr id="matrixHeaderSub" class="bg-gray-50 text-gray-600 uppercase tracking-wider border-b">
+                                <!-- Dynamic sub-columns (Ref, Actions) inserted here -->
                             </tr>
                         </thead>
                         <tbody id="matrixTableBody" class="divide-y divide-gray-100">
@@ -400,25 +404,30 @@
 
             const entities = [...new Set(Object.values(referralProfilesData).map(item => item.entityName))];
             
-            topHeaderRow.innerHTML = `<th class="p-3 border-r" rowspan="2">Test Name</th>`;
+            topHeaderRow.innerHTML = `
+                <th class="p-3 border-r" rowspan="2">Test Name</th>
+                <th class="p-3 border-r text-center bg-gray-50" rowspan="2">Cost</th>
+                <th class="p-3 border-r text-center bg-gray-50" rowspan="2">Base Ref</th>
+            `;
             entities.forEach(entity => {
-                topHeaderRow.innerHTML += `<th class="p-2 border-r text-center bg-gray-100" colspan="4">${entity}</th>`;
+                topHeaderRow.innerHTML += `<th class="p-2 border-r text-center bg-gray-100" colspan="2">${entity}</th>`;
             });
 
             subHeaderRow.innerHTML = '';
             entities.forEach(() => {
                 subHeaderRow.innerHTML += `
-                    <th class="p-2 border-r text-center">Cost</th>
-                    <th class="p-2 border-r text-center">Base Ref</th>
-                    <th class="p-2 border-r text-center">Ref</th>
+                    <th class="p-2 border-r text-center">Ref Price</th>
                     <th class="p-2 border-r text-center">Actions</th>
                 `;
             });
 
-            const tests = [...new Set(Object.values(baseCatalogueData).map(item => item.testName))];
+            const baseTestsList = [];
+            for (let bId in baseCatalogueData) {
+                baseTestsList.push(baseCatalogueData[bId]);
+            }
 
             tbody.innerHTML = '';
-            if (tests.length === 0) {
+            if (baseTestsList.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="100" class="p-4 text-center text-gray-400">No tests available in Base Catalogue.</td></tr>`;
                 return;
             }
@@ -430,15 +439,19 @@
                 matrixData[ref.testName][ref.entityName] = { ...ref, id };
             }
 
-            tests.forEach(testName => {
-                let rowHtml = `<tr class="hover:bg-gray-50"><td class="p-3 font-medium border-r bg-white text-gray-800">${testName}</td>`;
+            baseTestsList.forEach(baseItem => {
+                const testName = baseItem.testName;
+                let rowHtml = `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 font-medium border-r bg-white text-gray-800">${testName}</td>
+                        <td class="p-3 border-r text-center bg-gray-50 text-gray-600">${baseItem.cost.toFixed(2)}</td>
+                        <td class="p-3 border-r text-center bg-gray-50 text-gray-600">${baseItem.baseReferralPrice.toFixed(2)}</td>
+                `;
                 
                 entities.forEach(entity => {
                     const record = matrixData[testName] && matrixData[testName][entity];
                     if (record) {
                         rowHtml += `
-                            <td class="p-2 border-r text-center bg-white">${record.cost.toFixed(2)}</td>
-                            <td class="p-2 border-r text-center bg-white">${record.baseReferralPrice.toFixed(2)}</td>
                             <td class="p-2 border-r text-center font-semibold text-blue-600 bg-white">${record.referralPrice.toFixed(2)}</td>
                             <td class="p-2 border-r text-center space-x-1 bg-white">
                                 <button onclick="editReferralEntry('${record.id}')" class="text-blue-600 hover:underline">Edit</button>
@@ -447,8 +460,6 @@
                         `;
                     } else {
                         rowHtml += `
-                            <td class="p-2 border-r text-center text-gray-300 bg-white">-</td>
-                            <td class="p-2 border-r text-center text-gray-300 bg-white">-</td>
                             <td class="p-2 border-r text-center text-gray-300 bg-white">-</td>
                             <td class="p-2 border-r text-center text-gray-300 bg-white">-</td>
                         `;
