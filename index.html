@@ -98,10 +98,17 @@
                 </form>
             </div>
 
-            <!-- Tabular View -->
+            <!-- Tabular View with Search & Filter -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100">
+                <div class="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h3 class="text-lg font-semibold text-gray-700">Base Catalogue Records</h3>
+                    <!-- Search & Filter Controls -->
+                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                        <input type="text" id="baseSearchInput" oninput="renderBaseTable()" placeholder="Search test or category..." class="border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-full sm:w-64">
+                        <select id="baseCategoryFilter" onchange="renderBaseTable()" class="border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -174,10 +181,28 @@
                 </form>
             </div>
 
-            <!-- 2D Tabular Matrix View -->
+            <!-- 2D Tabular Matrix View with Search & Entity Filter -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100">
+                <div class="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h3 class="text-lg font-semibold text-gray-700">Referral Matrix View (Tests vs. Entities)</h3>
+                    <!-- Matrix Search & Entity Checkbox Filter Dropdown -->
+                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                        <input type="text" id="matrixSearchInput" oninput="renderMatrixView()" placeholder="Search test or category..." class="border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-full sm:w-64">
+                        <select id="matrixCategoryFilter" onchange="renderMatrixView()" class="border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="">All Categories</option>
+                        </select>
+                        <div class="relative inline-block text-left">
+                            <button type="button" onclick="toggleEntityDropdown()" class="border bg-white rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 focus:outline-none">
+                                Filter Entities <span id="entityFilterCount" class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full text-xs">All</span>
+                            </button>
+                            <div id="entityCheckboxDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-3 space-y-2 max-h-60 overflow-y-auto">
+                                <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Select Entities</div>
+                                <div id="entityCheckboxesContainer" class="space-y-1.5">
+                                    <!-- Dynamic entity checkboxes -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-xs" id="matrixTable">
@@ -217,6 +242,7 @@
 
         let baseCatalogueData = {};
         let referralProfilesData = {};
+        let selectedEntitiesFilter = new Set();
 
         // Real-time Listeners
         db.ref('baseCatalogue').on('value', (snapshot) => {
@@ -230,6 +256,20 @@
             referralProfilesData = snapshot.val() || {};
             renderMatrixView();
         });
+
+        // Close entity dropdown when clicking outside
+        window.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('entityCheckboxDropdown');
+            const button = dropdown.previousElementSibling;
+            if (!dropdown.contains(e.target) && !button.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        function toggleEntityDropdown() {
+            const dropdown = document.getElementById('entityCheckboxDropdown');
+            dropdown.classList.toggle('hidden');
+        }
 
         // Tab Switching
         function switchTab(tabId) {
@@ -269,18 +309,30 @@
 
         function renderBaseTable() {
             const tbody = document.getElementById('baseTableBody');
+            const searchQuery = document.getElementById('baseSearchInput').value.toLowerCase().trim();
+            const categoryFilter = document.getElementById('baseCategoryFilter').value;
+
             tbody.innerHTML = '';
-            if (Object.keys(baseCatalogueData).length === 0) {
+            
+            const entries = Object.entries(baseCatalogueData);
+            if (entries.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">No records found.</td></tr>`;
                 return;
             }
 
-            for (let id in baseCatalogueData) {
-                const item = baseCatalogueData[id];
+            let filteredCount = 0;
+            entries.forEach(([id, item]) => {
+                const category = item.category || '';
+                const testName = item.testName || '';
+
+                if (categoryFilter && category !== categoryFilter) return;
+                if (searchQuery && !testName.toLowerCase().includes(searchQuery) && !category.toLowerCase().includes(searchQuery)) return;
+
+                filteredCount++;
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50 text-sm">
-                        <td class="p-3 font-medium text-gray-800">${item.category}</td>
-                        <td class="p-3">${item.testName}</td>
+                        <td class="p-3 font-medium text-gray-800">${category}</td>
+                        <td class="p-3">${testName}</td>
                         <td class="p-3">${item.cost.toFixed(2)}</td>
                         <td class="p-3">${item.baseReferralPrice.toFixed(2)}</td>
                         <td class="p-3"><span class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-semibold">${item.sampleType}</span></td>
@@ -291,6 +343,10 @@
                         </td>
                     </tr>
                 `;
+            });
+
+            if (filteredCount === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">No matching records found.</td></tr>`;
             }
         }
 
@@ -385,13 +441,32 @@
 
         // --- TAB 2: Referral Out Profiles Logic ---
         function populateCategoryDropdowns(selectedCategory = '') {
-            const categorySelect = document.getElementById('refCategoryName');
             const categories = [...new Set(Object.values(baseCatalogueData).map(item => item.category ? item.category.trim() : ''))].filter(Boolean);
             
+            // Ref Form Dropdown
+            const categorySelect = document.getElementById('refCategoryName');
             categorySelect.innerHTML = '<option value="">Select Category</option>';
             categories.forEach(cat => {
                 const isSelected = cat === selectedCategory ? 'selected' : '';
                 categorySelect.innerHTML += `<option value="${cat}" ${isSelected}>${cat}</option>`;
+            });
+
+            // Base Table Filter Dropdown
+            const baseFilter = document.getElementById('baseCategoryFilter');
+            const currentBaseVal = baseFilter.value;
+            baseFilter.innerHTML = '<option value="">All Categories</option>';
+            categories.forEach(cat => {
+                const isSelected = cat === currentBaseVal ? 'selected' : '';
+                baseFilter.innerHTML += `<option value="${cat}" ${isSelected}>${cat}</option>`;
+            });
+
+            // Matrix Table Filter Dropdown
+            const matrixFilter = document.getElementById('matrixCategoryFilter');
+            const currentMatrixVal = matrixFilter.value;
+            matrixFilter.innerHTML = '<option value="">All Categories</option>';
+            categories.forEach(cat => {
+                const isSelected = cat === currentMatrixVal ? 'selected' : '';
+                matrixFilter.innerHTML += `<option value="${cat}" ${isSelected}>${cat}</option>`;
             });
         }
 
@@ -544,24 +619,87 @@
             reader.readAsArrayBuffer(file);
         }
 
+        function updateEntityCheckboxes(allEntities) {
+            const container = document.getElementById('entityCheckboxesContainer');
+            
+            // Clean up selections that no longer exist
+            selectedEntitiesFilter.forEach(ent => {
+                if (!allEntities.includes(ent)) selectedEntitiesFilter.delete(ent);
+            });
+
+            container.innerHTML = '';
+            
+            // "Select All" / Reset option
+            const isAllSelected = selectedEntitiesFilter.size === 0;
+
+            allEntities.forEach(entity => {
+                const isChecked = isAllSelected || selectedEntitiesFilter.has(entity);
+                container.innerHTML += `
+                    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                        <input type="checkbox" value="${entity}" ${isChecked ? 'checked' : ''} onchange="handleEntityCheckboxChange(event)" class="rounded text-blue-600 focus:ring-blue-500">
+                        <span class="truncate">${entity}</span>
+                    </label>
+                `;
+            });
+
+            const countSpan = document.getElementById('entityFilterCount');
+            if (isAllSelected || selectedEntitiesFilter.size === allEntities.length) {
+                countSpan.innerText = 'All';
+            } else {
+                countSpan.innerText = selectedEntitiesFilter.size;
+            }
+        }
+
+        function handleEntityCheckboxChange(e) {
+            const entity = e.target.value;
+            const allEntities = [...new Set(Object.values(referralProfilesData).map(item => item.entityName))];
+
+            if (selectedEntitiesFilter.size === 0) {
+                // If previously "All" was selected, clicking one means we start filtering specifically
+                allEntities.forEach(ent => {
+                    if (ent !== entity) selectedEntitiesFilter.add(ent);
+                });
+            } else {
+                if (e.target.checked) {
+                    selectedEntitiesFilter.add(entity);
+                } else {
+                    selectedEntitiesFilter.delete(entity);
+                }
+            }
+
+            if (selectedEntitiesFilter.size === allEntities.length) {
+                selectedEntitiesFilter.clear(); // Reset to all
+            }
+
+            updateEntityCheckboxes(allEntities);
+            renderMatrixView();
+        }
+
         function renderMatrixView() {
             const topHeaderRow = document.getElementById('matrixHeaderTop');
             const subHeaderRow = document.getElementById('matrixHeaderSub');
             const tbody = document.getElementById('matrixTableBody');
+            const searchQuery = document.getElementById('matrixSearchInput').value.toLowerCase().trim();
+            const categoryFilter = document.getElementById('matrixCategoryFilter').value;
 
-            const entities = [...new Set(Object.values(referralProfilesData).map(item => item.entityName))];
+            const allEntities = [...new Set(Object.values(referralProfilesData).map(item => item.entityName))];
+            updateEntityCheckboxes(allEntities);
+
+            const activeEntities = selectedEntitiesFilter.size === 0 
+                ? allEntities 
+                : allEntities.filter(ent => selectedEntitiesFilter.has(ent));
             
             topHeaderRow.innerHTML = `
                 <th class="p-3 border-r" rowspan="2">Test Name</th>
                 <th class="p-3 border-r text-center bg-gray-50" rowspan="2">Cost</th>
                 <th class="p-3 border-r text-center bg-gray-50" rowspan="2">Base Ref</th>
             `;
-            entities.forEach(entity => {
+            activeEntities.forEach(entity => {
                 topHeaderRow.innerHTML += `<th class="p-2 border-r text-center bg-gray-100" colspan="2">${entity}</th>`;
             });
 
             subHeaderRow.innerHTML = '';
-            entities.forEach(() => {
+            activeEntities.forEach(() => {
                 subHeaderRow.innerHTML += `
                     <th class="p-2 border-r text-center">Ref Price & Diff</th>
                     <th class="p-2 border-r text-center">Actions</th>
@@ -586,8 +724,15 @@
                 matrixData[ref.testName][ref.entityName] = { ...ref, id };
             }
 
+            let filteredCount = 0;
             baseTestsList.forEach(baseItem => {
-                const testName = baseItem.testName;
+                const testName = baseItem.testName || '';
+                const category = baseItem.category || '';
+
+                if (categoryFilter && category !== categoryFilter) return;
+                if (searchQuery && !testName.toLowerCase().includes(searchQuery) && !category.toLowerCase().includes(searchQuery)) return;
+
+                filteredCount++;
                 const baseCost = baseItem.cost;
                 const baseRefPrice = baseItem.baseReferralPrice;
 
@@ -598,7 +743,7 @@
                         <td class="p-3 border-r text-center bg-gray-50 text-gray-600">${baseRefPrice.toFixed(2)}</td>
                 `;
                 
-                entities.forEach(entity => {
+                activeEntities.forEach(entity => {
                     const record = matrixData[testName] && matrixData[testName][entity];
                     if (record) {
                         const refPrice = record.referralPrice;
@@ -633,6 +778,10 @@
                 rowHtml += `</tr>`;
                 tbody.innerHTML += rowHtml;
             });
+
+            if (filteredCount === 0) {
+                tbody.innerHTML = `<tr><td colspan="100" class="p-4 text-center text-gray-400">No matching records found.</td></tr>`;
+            }
         }
 
         function editReferralEntry(id) {
