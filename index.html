@@ -166,14 +166,11 @@
                         <thead>
                             <tr id="matrixHeaderTop" class="bg-gray-100 text-gray-700 font-semibold border-b">
                                 <th class="p-3 border-r" rowspan="2">Test Name</th>
-                                <!-- Dynamic entity top headers inserted here -->
                             </tr>
                             <tr id="matrixHeaderSub" class="bg-gray-50 text-gray-600 uppercase tracking-wider border-b">
-                                <!-- Dynamic sub-columns (Cost, Base Ref, Ref, Actions) inserted here -->
                             </tr>
                         </thead>
                         <tbody id="matrixTableBody" class="divide-y divide-gray-100">
-                            <!-- Populated dynamically -->
                         </tbody>
                     </table>
                 </div>
@@ -184,15 +181,15 @@
     <!-- Application Logic -->
     <script>
         // REPLACE WITH YOUR FIREBASE CONFIGURATION
-         const firebaseConfig = {
-  apiKey: "AIzaSyCQ2oWm-qxAJE2D-xBPvfbOXJ7OD1GY1D8",
-  authDomain: "biosensesreferralout.firebaseapp.com",
-  databaseURL: "https://biosensesreferralout-default-rtdb.firebaseio.com",
-  projectId: "biosensesreferralout",
-  storageBucket: "biosensesreferralout.firebasestorage.app",
-  messagingSenderId: "905895559666",
-  appId: "1:905895559666:web:99016e94f4b20a79de2b6b"
-};
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -233,8 +230,8 @@
             e.preventDefault();
             const editId = document.getElementById('baseEditId').value;
             const entry = {
-                category: document.getElementById('baseCategory').value,
-                testName: document.getElementById('baseTestName').value,
+                category: document.getElementById('baseCategory').value.trim(),
+                testName: document.getElementById('baseTestName').value.trim(),
                 cost: parseFloat(document.getElementById('baseCost').value),
                 baseReferralPrice: parseFloat(document.getElementById('baseReferralPrice').value),
                 sampleType: document.getElementById('baseSampleType').value,
@@ -303,29 +300,38 @@
         }
 
         // --- TAB 2: Referral Out Profiles Logic ---
-        function populateCategoryDropdowns() {
+        function populateCategoryDropdowns(selectedCategory = '') {
             const categorySelect = document.getElementById('refCategoryName');
-            const categories = [...new Set(Object.values(baseCatalogueData).map(item => item.category))];
+            const categories = [...new Set(Object.values(baseCatalogueData).map(item => item.category ? item.category.trim() : ''))].filter(Boolean);
             
             categorySelect.innerHTML = '<option value="">Select Category</option>';
             categories.forEach(cat => {
-                categorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+                const isSelected = cat === selectedCategory ? 'selected' : '';
+                categorySelect.innerHTML += `<option value="${cat}" ${isSelected}>${cat}</option>`;
             });
         }
 
-        function filterTestsByCategory() {
-            const selectedCategory = document.getElementById('refCategoryName').value;
+        function filterTestsByCategory(selectedTest = '') {
+            const selectedCategory = document.getElementById('refCategoryName').value.trim();
             const testSelect = document.getElementById('refTestName');
             
             testSelect.innerHTML = '<option value="">Select Test Name</option>';
             document.getElementById('refCost').value = '';
             document.getElementById('refBaseReferralPrice').value = '';
 
+            if (!selectedCategory) return;
+
             for (let id in baseCatalogueData) {
                 const item = baseCatalogueData[id];
-                if (item.category === selectedCategory) {
-                    testSelect.innerHTML += `<option value="${item.testName}" data-id="${id}">${item.testName}</option>`;
+                const itemCat = item.category ? item.category.trim() : '';
+                if (itemCat === selectedCategory) {
+                    const isSelected = item.testName === selectedTest ? 'selected' : '';
+                    testSelect.innerHTML += `<option value="${item.testName}" data-id="${id}" ${isSelected}>${item.testName}</option>`;
                 }
+            }
+
+            if (selectedTest) {
+                autoPopulateBaseFields();
             }
         }
 
@@ -358,8 +364,8 @@
             const editId = document.getElementById('refEditId').value;
             const entry = {
                 entityName: document.getElementById('refEntityName').value.trim(),
-                categoryName: document.getElementById('refCategoryName').value,
-                testName: document.getElementById('refTestName').value,
+                categoryName: document.getElementById('refCategoryName').value.trim(),
+                testName: document.getElementById('refTestName').value.trim(),
                 cost: parseFloat(costVal),
                 baseReferralPrice: parseFloat(baseRefVal),
                 referralPrice: parseFloat(document.getElementById('refReferralPrice').value)
@@ -383,6 +389,8 @@
             document.getElementById('refBaseReferralPrice').value = '';
             document.getElementById('refFormTitle').innerText = 'Add Referral Profile Entry';
             document.getElementById('refCancelBtn').classList.add('hidden');
+            populateCategoryDropdowns();
+            document.getElementById('refTestName').innerHTML = '<option value="">Select Test Name</option>';
         }
 
         function renderMatrixView() {
@@ -392,13 +400,11 @@
 
             const entities = [...new Set(Object.values(referralProfilesData).map(item => item.entityName))];
             
-            // Build top headers
             topHeaderRow.innerHTML = `<th class="p-3 border-r" rowspan="2">Test Name</th>`;
             entities.forEach(entity => {
                 topHeaderRow.innerHTML += `<th class="p-2 border-r text-center bg-gray-100" colspan="4">${entity}</th>`;
             });
 
-            // Build sub-headers
             subHeaderRow.innerHTML = '';
             entities.forEach(() => {
                 subHeaderRow.innerHTML += `
@@ -458,10 +464,10 @@
             const item = referralProfilesData[id];
             document.getElementById('refEditId').value = id;
             document.getElementById('refEntityName').value = item.entityName;
-            document.getElementById('refCategoryName').value = item.categoryName;
-            filterTestsByCategory();
-            document.getElementById('refTestName').value = item.testName;
-            autoPopulateBaseFields();
+            
+            populateCategoryDropdowns(item.categoryName);
+            filterTestsByCategory(item.testName);
+            
             document.getElementById('refReferralPrice').value = item.referralPrice;
             
             switchTab('referralProfiles');
