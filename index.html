@@ -563,7 +563,7 @@
             subHeaderRow.innerHTML = '';
             entities.forEach(() => {
                 subHeaderRow.innerHTML += `
-                    <th class="p-2 border-r text-center">Ref Price</th>
+                    <th class="p-2 border-r text-center">Ref Price & Diff</th>
                     <th class="p-2 border-r text-center">Actions</th>
                 `;
             });
@@ -588,18 +588,35 @@
 
             baseTestsList.forEach(baseItem => {
                 const testName = baseItem.testName;
+                const baseCost = baseItem.cost;
+                const baseRefPrice = baseItem.baseReferralPrice;
+
                 let rowHtml = `
                     <tr class="hover:bg-gray-50">
                         <td class="p-3 font-medium border-r bg-white text-gray-800">${testName}</td>
-                        <td class="p-3 border-r text-center bg-gray-50 text-gray-600">${baseItem.cost.toFixed(2)}</td>
-                        <td class="p-3 border-r text-center bg-gray-50 text-gray-600">${baseItem.baseReferralPrice.toFixed(2)}</td>
+                        <td class="p-3 border-r text-center bg-gray-50 text-gray-600">${baseCost.toFixed(2)}</td>
+                        <td class="p-3 border-r text-center bg-gray-50 text-gray-600">${baseRefPrice.toFixed(2)}</td>
                 `;
                 
                 entities.forEach(entity => {
                     const record = matrixData[testName] && matrixData[testName][entity];
                     if (record) {
+                        const refPrice = record.referralPrice;
+                        const diffCost = refPrice - baseCost;
+                        const diffBase = refPrice - baseRefPrice;
+
+                        const costClass = diffCost >= 0 ? 'text-green-600' : 'text-red-600';
+                        const baseClass = diffBase >= 0 ? 'text-green-600' : 'text-red-600';
+
+                        const formatDiff = (val) => (val >= 0 ? `+${val.toFixed(2)}` : val.toFixed(2));
+
                         rowHtml += `
-                            <td class="p-2 border-r text-center font-semibold text-blue-600 bg-white">${record.referralPrice.toFixed(2)}</td>
+                            <td class="p-2 border-r text-center bg-white">
+                                <div class="font-semibold text-blue-600">${refPrice.toFixed(2)}</div>
+                                <div class="text-[11px] text-gray-500">
+                                    (<span class="${costClass}">${formatDiff(diffCost)}</span>, <span class="${baseClass}">${formatDiff(diffBase)}</span>)
+                                </div>
+                            </td>
                             <td class="p-2 border-r text-center space-x-1 bg-white">
                                 <button onclick="editReferralEntry('${record.id}')" class="text-blue-600 hover:underline">Edit</button>
                                 <button onclick="deleteReferralEntry('${record.id}')" class="text-red-600 hover:underline">Del</button>
