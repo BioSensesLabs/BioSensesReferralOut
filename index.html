@@ -32,14 +32,14 @@
         </div>
 
         <!-- TAB 1: Base Catalogue -->
-        <div id="section-baseCatalogue" class="space-y-8">
-            <!-- Upload Excel Section -->
-            <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div id="section-baseCatalogue" class="space-y-6">
+            <!-- BULK UPLOAD BOX -->
+            <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
                 <div>
-                    <h3 class="font-semibold text-blue-900 text-sm">Bulk Upload Base Catalogue</h3>
-                    <p class="text-xs text-blue-700">Upload Excel with headers: <code class="bg-white px-1 py-0.5 rounded border">Category Name, Test Name, Cost, Base Price, Sample Type, TAT</code></p>
+                    <h3 class="font-semibold text-blue-900 text-sm">Bulk Upload Base Catalogue via Excel</h3>
+                    <p class="text-xs text-blue-700 mt-0.5">Required Headers: <code class="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-mono">Category Name, Test Name, Cost, Base Price, Sample Type, TAT</code></p>
                 </div>
-                <input type="file" id="baseExcelFile" accept=".xlsx, .xls, .csv" onchange="handleBaseExcelUpload(event)" class="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+                <input type="file" id="baseExcelFile" accept=".xlsx, .xls, .csv" onchange="handleBaseExcelUpload(event)" class="text-xs text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
             </div>
 
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -125,14 +125,14 @@
         </div>
 
         <!-- TAB 2: Referral Out Profiles -->
-        <div id="section-referralProfiles" class="space-y-8 hidden">
-            <!-- Upload Excel Section -->
-            <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div id="section-referralProfiles" class="space-y-6 hidden">
+            <!-- BULK UPLOAD BOX -->
+            <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
                 <div>
-                    <h3 class="font-semibold text-blue-900 text-sm">Bulk Upload Referral Prices</h3>
-                    <p class="text-xs text-blue-700">Upload Excel with headers: <code class="bg-white px-1 py-0.5 rounded border">Entity Name, Category Name, Test Name, Referral Price</code></p>
+                    <h3 class="font-semibold text-blue-900 text-sm">Bulk Upload Referral Prices via Excel</h3>
+                    <p class="text-xs text-blue-700 mt-0.5">Required Headers: <code class="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-mono">Entity Name, Category Name, Test Name, Referral Price</code></p>
                 </div>
-                <input type="file" id="refExcelFile" accept=".xlsx, .xls, .csv" onchange="handleRefExcelUpload(event)" class="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+                <input type="file" id="refExcelFile" accept=".xlsx, .xls, .csv" onchange="handleRefExcelUpload(event)" class="text-xs text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
             </div>
 
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -484,7 +484,6 @@
                         return;
                     }
 
-                    // Create a lookup map for base catalogue items by Test Name (case-insensitive)
                     const baseMap = {};
                     for (let bId in baseCatalogueData) {
                         const item = baseCatalogueData[bId];
