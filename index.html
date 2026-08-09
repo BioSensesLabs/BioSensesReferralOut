@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catalogue & Referral Management</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-p-6">
+
+    <div class="max-w-7xl mx-auto p-4 sm:p-6">
+        <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-blue-600">Catalogue & Referral Manager</h1>
+                <p class="text-sm text-gray-500">Manage base testing catalogues and multi-entity referral pricing matrices.</p>
+            </div>
+            <button onclick="exportToExcel()" class="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
+                Export Data to Excel
+            </button>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-gray-200 mb-6">
+            <button onclick="switchTab('baseCatalogue')" id="tab-baseCatalogue" class="py-2 px-6 font-semibold border-b-2 border-blue-600 text-blue-600 focus:outline-none transition">1. Base Catalogue</button>
+            <button onclick="switchTab('referralProfiles')" id="tab-referralProfiles" class="py-2 px-6 font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 focus:outline-none transition">2. Referral Out Profiles</button>
+        </div>
+
+        <!-- TAB 1: Base Catalogue -->
+        <div id="section-baseCatalogue" class="space-y-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700" id="baseFormTitle">Add New Base Entry</h2>
+                <form id="baseCatalogueForm" onsubmit="handleBaseSubmit(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input type="hidden" id="baseEditId">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Category Name</label>
+                        <input type="text" id="baseCategory" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Test Name</label>
+                        <input type="text" id="baseTestName" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Cost</label>
+                        <input type="number" step="0.01" id="baseCost" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Base Referral Price</label>
+                        <input type="number" step="0.01" id="baseReferralPrice" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Sample Type</label>
+                        <select id="baseSampleType" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="">Select Sample Type</option>
+                            <option value="EDTA">EDTA</option>
+                            <option value="Serum">Serum</option>
+                            <option value="Serum 1 ml">Serum 1 ml</option>
+                            <option value="Citrate">Citrate</option>
+                            <option value="Urine/Stoll/HVS">Urine/Stoll/HVS</option>
+                            <option value="Blood">Blood</option>
+                            <option value="Stool">Stool</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">TAT</label>
+                        <select id="baseTat" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="">Select TAT</option>
+                            <option value="Daily">Daily</option>
+                            <option value="2 Days">2 Days</option>
+                            <option value="3 Days">3 Days</option>
+                            <option value="4 Days">4 Days</option>
+                            <option value="5 Days">5 Days</option>
+                            <option value="6 Days">6 Days</option>
+                            <option value="7 Days">7 Days</option>
+                            <option value="8 Days">8 Days</option>
+                            <option value="9 Days">9 Days</option>
+                            <option value="10 Days">10 Days</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3 flex justify-end gap-2 mt-2">
+                        <button type="button" id="baseCancelBtn" onclick="resetBaseForm()" class="hidden bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg transition">Cancel</button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg shadow transition">Save Entry</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tabular View -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-700">Base Catalogue Records</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider border-b">
+                                <th class="p-3">Category</th>
+                                <th class="p-3">Test Name</th>
+                                <th class="p-3">Cost</th>
+                                <th class="p-3">Base Referral Price</th>
+                                <th class="p-3">Sample Type</th>
+                                <th class="p-3">TAT</th>
+                                <th class="p-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="baseTableBody" class="divide-y divide-gray-100 text-sm">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Referral Out Profiles -->
+        <div id="section-referralProfiles" class="space-y-8 hidden">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700" id="refFormTitle">Add Referral Profile Entry</h2>
+                <form id="referralForm" onsubmit="handleReferralSubmit(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <input type="hidden" id="refEditId">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Entity Name</label>
+                        <input type="text" id="refEntityName" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Category Name</label>
+                        <select id="refCategoryName" onchange="filterTestsByCategory()" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="">Select Category</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Test Name</label>
+                        <select id="refTestName" onchange="autoPopulateBaseFields()" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="">Select Test Name</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Cost (Auto)</label>
+                        <input type="number" step="0.01" id="refCost" readonly class="w-full border bg-gray-100 rounded-lg px-3 py-2 text-gray-500 cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Base Referral Price (Auto)</label>
+                        <input type="number" step="0.01" id="refBaseReferralPrice" readonly class="w-full border bg-gray-100 rounded-lg px-3 py-2 text-gray-500 cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Referral Price</label>
+                        <input type="number" step="0.01" id="refReferralPrice" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div class="md:col-span-3 flex justify-end gap-2 mt-2">
+                        <button type="button" id="refCancelBtn" onclick="resetReferralForm()" class="hidden bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg transition">Cancel</button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg shadow transition">Save Referral Entry</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 2D Tabular Matrix View -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-700">Referral Matrix View (Tests vs. Entities)</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="matrixTable">
+                        <thead>
+                            <tr id="matrixHeaderRow" class="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider border-b">
+                                <th class="p-3 border-r">Test Name</th>
+                                <!-- Dynamic entity headers populated here -->
+                            </tr>
+                        </thead>
+                        <tbody id="matrixTableBody" class="divide-y divide-gray-100 text-sm">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // REPLACE WITH YOUR FIREBASE CONFIGURATION
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let baseCatalogueData = {};
+        let referralProfilesData = {};
+
+        // Real-time Listeners
+        db.ref('baseCatalogue').on('value', (snapshot) => {
+            baseCatalogueData = snapshot.val() || {};
+            renderBaseTable();
+            populateCategoryDropdowns();
+            renderMatrixView();
+        });
+
+        db.ref('referralProfiles').on('value', (snapshot) => {
+            referralProfilesData = snapshot.val() || {};
+            renderMatrixView();
+        });
+
+        // Tab Switching
+        function switchTab(tabId) {
+            ['baseCatalogue', 'referralProfiles'].forEach(id => {
+                document.getElementById(`section-${id}`).classList.toggle('hidden', id !== tabId);
+                const btn = document.getElementById(`tab-${id}`);
+                if (id === tabId) {
+                    btn.classList.add('border-blue-600', 'text-blue-600');
+                    btn.classList.remove('border-transparent', 'text-gray-500');
+                } else {
+                    btn.classList.remove('border-blue-600', 'text-blue-600');
+                    btn.classList.add('border-transparent', 'text-gray-500');
+                }
+            });
+        }
+
+        // --- TAB 1: Base Catalogue Logic ---
+        function handleBaseSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('baseEditId').value;
+            const entry = {
+                category: document.getElementById('baseCategory').value,
+                testName: document.getElementById('baseTestName').value,
+                cost: parseFloat(document.getElementById('baseCost').value),
+                baseReferralPrice: parseFloat(document.getElementById('baseReferralPrice').value),
+                sampleType: document.getElementById('baseSampleType').value,
+                tat: document.getElementById('baseTat').value
+            };
+
+            if (editId) {
+                db.ref('baseCatalogue/' + editId).set(entry);
+            } else {
+                db.ref('baseCatalogue').push(entry);
+            }
+            resetBaseForm();
+        }
+
+        function renderBaseTable() {
+            const tbody = document.getElementById('baseTableBody');
+            tbody.innerHTML = '';
+            if (Object.keys(baseCatalogueData).length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">No records found.</td></tr>`;
+                return;
+            }
+
+            for (let id in baseCatalogueData) {
+                const item = baseCatalogueData[id];
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 font-medium text-gray-800">${item.category}</td>
+                        <td class="p-3">${item.testName}</td>
+                        <td class="p-3">${item.cost.toFixed(2)}</td>
+                        <td class="p-3">${item.baseReferralPrice.toFixed(2)}</td>
+                        <td class="p-3"><span class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-semibold">${item.sampleType}</span></td>
+                        <td class="p-3">${item.tat}</td>
+                        <td class="p-3 text-right space-x-2">
+                            <button onclick="editBaseEntry('${id}')" class="text-blue-600 hover:text-blue-800 font-medium">Edit</button>
+                            <button onclick="deleteBaseEntry('${id}')" class="text-red-600 hover:text-red-800 font-medium">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function editBaseEntry(id) {
+            const item = baseCatalogueData[id];
+            document.getElementById('baseEditId').value = id;
+            document.getElementById('baseCategory').value = item.category;
+            document.getElementById('baseTestName').value = item.testName;
+            document.getElementById('baseCost').value = item.cost;
+            document.getElementById('baseReferralPrice').value = item.baseReferralPrice;
+            document.getElementById('baseSampleType').value = item.sampleType;
+            document.getElementById('baseTat').value = item.tat;
+            document.getElementById('baseFormTitle').innerText = 'Edit Base Entry';
+            document.getElementById('baseCancelBtn').classList.remove('hidden');
+        }
+
+        function resetBaseForm() {
+            document.getElementById('baseCatalogueForm').reset();
+            document.getElementById('baseEditId').value = '';
+            document.getElementById('baseFormTitle').innerText = 'Add New Base Entry';
+            document.getElementById('baseCancelBtn').classList.add('hidden');
+        }
+
+        function deleteBaseEntry(id) {
+            if (confirm('Are you sure you want to delete this base entry?')) {
+                db.ref('baseCatalogue/' + id).remove();
+            }
+        }
+
+        // --- TAB 2: Referral Out Profiles Logic ---
+        function populateCategoryDropdowns() {
+            const categorySelect = document.getElementById('refCategoryName');
+            const categories = [...new Set(Object.values(baseCatalogueData).map(item => item.category))];
+            
+            categorySelect.innerHTML = '<option value="">Select Category</option>';
+            categories.forEach(cat => {
+                categorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+        }
+
+        function filterTestsByCategory() {
+            const selectedCategory = document.getElementById('refCategoryName').value;
+            const testSelect = document.getElementById('refTestName');
+            
+            testSelect.innerHTML = '<option value="">Select Test Name</option>';
+            document.getElementById('refCost').value = '';
+            document.getElementById('refBaseReferralPrice').value = '';
+
+            for (let id in baseCatalogueData) {
+                const item = baseCatalogueData[id];
+                if (item.category === selectedCategory) {
+                    testSelect.innerHTML += `<option value="${item.testName}" data-id="${id}">${item.testName}</option>`;
+                }
+            }
+        }
+
+        function autoPopulateBaseFields() {
+            const testSelect = document.getElementById('refTestName');
+            const selectedOption = testSelect.options[testSelect.selectedIndex];
+            const baseId = selectedOption ? selectedOption.getAttribute('data-id') : null;
+
+            if (baseId && baseCatalogueData[baseId]) {
+                const item = baseCatalogueData[baseId];
+                document.getElementById('refCost').value = item.cost;
+                document.getElementById('refBaseReferralPrice').value = item.baseReferralPrice;
+            } else {
+                document.getElementById('refCost').value = '';
+                document.getElementById('refBaseReferralPrice').value = '';
+            }
+        }
+
+        function handleReferralSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('refEditId').value;
+            const entry = {
+                entityName: document.getElementById('refEntityName').value.trim(),
+                categoryName: document.getElementById('refCategoryName').value,
+                testName: document.getElementById('refTestName').value,
+                cost: parseFloat(document.getElementById('refCost').value),
+                baseReferralPrice: parseFloat(document.getElementById('refBaseReferralPrice').value),
+                referralPrice: parseFloat(document.getElementById('refReferralPrice').value)
+            };
+
+            if (editId) {
+                db.ref('referralProfiles/' + editId).set(entry);
+            } else {
+                db.ref('referralProfiles').push(entry);
+            }
+            resetReferralForm();
+        }
+
+        function resetReferralForm() {
+            document.getElementById('referralForm').reset();
+            document.getElementById('refEditId').value = '';
+            document.getElementById('refCost').value = '';
+            document.getElementById('refBaseReferralPrice').value = '';
+            document.getElementById('refFormTitle').innerText = 'Add Referral Profile Entry';
+            document.getElementById('refCancelBtn').classList.add('hidden');
+        }
+
+        function renderMatrixView() {
+            const headerRow = document.getElementById('matrixHeaderRow');
+            const tbody = document.getElementById('matrixTableBody');
+
+            // Gather all distinct entity names
+            const entities = [...new Set(Object.values(referralProfilesData).map(item => item.entityName))];
+            
+            // Build dynamic headers (Test Name + each entity)
+            headerRow.innerHTML = `<th class="p-3 border-r bg-gray-50">Test Name</th>`;
+            entities.forEach(entity => {
+                headerRow.innerHTML += `<th class="p-3 border-r text-center bg-gray-50" colspan="3">${entity}</th>`;
+            });
+
+            if(entities.length > 0) {
+                // Add sub-headers row or handle layout. Let's append subcolumns cleanly:
+            }
+
+            // Gather all distinct test names present in Base Catalogue
+            const tests = [...new Set(Object.values(baseCatalogueData).map(item => item.testName))];
+
+            tbody.innerHTML = '';
+            if (tests.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="100" class="p-4 text-center text-gray-400">No tests available in Base Catalogue.</td></tr>`;
+                return;
+            }
+
+            // Map data for quick lookup: matrixData[testName][entityName] = entry
+            const matrixData = {};
+            for (let id in referralProfilesData) {
+                const ref = referralProfilesData[id];
+                if (!matrixData[ref.testName]) matrixData[ref.testName] = {};
+                matrixData[ref.testName][ref.entityName] = { ...ref, id };
+            }
+
+            tests.forEach(testName => {
+                let rowHtml = `<tr class="hover:bg-gray-50"><td class="p-3 font-medium border-r bg-white">${testName}</td>`;
+                
+                entities.forEach(entity => {
+                    const record = matrixData[testName] && matrixData[testName][entity];
+                    if (record) {
+                        rowHtml += `
+                            <td class="p-2 border-r text-xs bg-white">
+                                <div class="text-gray-500">Cost: <b>${record.cost.toFixed(2)}</b></div>
+                                <div class="text-gray-500">Base Ref: <b>${record.baseReferralPrice.toFixed(2)}</b></div>
+                                <div class="text-blue-600 font-semibold">Ref: ${record.referralPrice.toFixed(2)}</div>
+                                <div class="mt-1 space-x-1">
+                                    <button onclick="editReferralEntry('${record.id}')" class="text-blue-600 hover:underline">Edit</button>
+                                    <button onclick="deleteReferralEntry('${record.id}')" class="text-red-600 hover:underline">Del</button>
+                                </div>
+                            </td>
+                        `;
+                    } else {
+                        rowHtml += `<td class="p-3 border-r text-center text-gray-300 bg-white">-</td>`;
+                    }
+                });
+
+                rowHtml += `</tr>`;
+                tbody.innerHTML += rowHtml;
+            });
+        }
+
+        function editReferralEntry(id) {
+            const item = referralProfilesData[id];
+            document.getElementById('refEditId').value = id;
+            document.getElementById('refEntityName').value = item.entityName;
+            document.getElementById('refCategoryName').value = item.categoryName;
+            filterTestsByCategory();
+            document.getElementById('refTestName').value = item.testName;
+            autoPopulateBaseFields();
+            document.getElementById('refReferralPrice').value = item.referralPrice;
+            
+            switchTab('referralProfiles');
+            document.getElementById('refFormTitle').innerText = 'Edit Referral Profile Entry';
+            document.getElementById('refCancelBtn').classList.remove('hidden');
+        }
+
+        function deleteReferralEntry(id) {
+            if (confirm('Are you sure you want to delete this referral profile entry?')) {
+                db.ref('referralProfiles/' + id).remove();
+            }
+        }
+
+        // --- Excel Export ---
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+
+            // Sheet 1: Base Catalogue
+            const baseArray = Object.keys(baseCatalogueData).map(id => ({
+                Category: baseCatalogueData[id].category,
+                'Test Name': baseCatalogueData[id].testName,
+                Cost: baseCatalogueData[id].cost,
+                'Base Referral Price': baseCatalogueData[id].baseReferralPrice,
+                'Sample Type': baseCatalogueData[id].sampleType,
+                TAT: baseCatalogueData[id].tat
+            }));
+            const wsBase = XLSX.utils.json_to_sheet(baseArray);
+            XLSX.utils.book_append_sheet(wb, wsBase, "Base Catalogue");
+
+            // Sheet 2: Referral Profiles
+            const refArray = Object.keys(referralProfilesData).map(id => ({
+                'Entity Name': referralProfilesData[id].entityName,
+                'Category Name': referralProfilesData[id].categoryName,
+                'Test Name': referralProfilesData[id].testName,
+                Cost: referralProfilesData[id].cost,
+                'Base Referral Price': referralProfilesData[id].baseReferralPrice,
+                'Referral Price': referralProfilesData[id].referralPrice
+            }));
+            const wsRef = XLSX.utils.json_to_sheet(refArray);
+            XLSX.utils.book_append_sheet(wb, wsRef, "Referral Profiles");
+
+            // Trigger Download
+            XLSX.writeFile(wb, "Catalogue_and_Referral_Data.xlsx");
+        }
+    </script>
+</body>
+</html>
