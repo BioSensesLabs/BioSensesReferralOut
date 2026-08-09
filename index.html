@@ -6,7 +6,7 @@
     <title>Catalogue & Referral Management</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS for Excel Export -->
+    <!-- SheetJS for Excel Read/Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -33,6 +33,15 @@
 
         <!-- TAB 1: Base Catalogue -->
         <div id="section-baseCatalogue" class="space-y-8">
+            <!-- Upload Excel Section -->
+            <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h3 class="font-semibold text-blue-900 text-sm">Bulk Upload Base Catalogue</h3>
+                    <p class="text-xs text-blue-700">Upload Excel with headers: <code class="bg-white px-1 py-0.5 rounded border">Category Name, Test Name, Cost, Base Price, Sample Type, TAT</code></p>
+                </div>
+                <input type="file" id="baseExcelFile" accept=".xlsx, .xls, .csv" onchange="handleBaseExcelUpload(event)" class="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+            </div>
+
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h2 class="text-xl font-semibold mb-4 text-gray-700" id="baseFormTitle">Add New Base Entry</h2>
                 <form id="baseCatalogueForm" onsubmit="handleBaseSubmit(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -117,6 +126,15 @@
 
         <!-- TAB 2: Referral Out Profiles -->
         <div id="section-referralProfiles" class="space-y-8 hidden">
+            <!-- Upload Excel Section -->
+            <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                    <h3 class="font-semibold text-blue-900 text-sm">Bulk Upload Referral Prices</h3>
+                    <p class="text-xs text-blue-700">Upload Excel with headers: <code class="bg-white px-1 py-0.5 rounded border">Entity Name, Category Name, Test Name, Referral Price</code></p>
+                </div>
+                <input type="file" id="refExcelFile" accept=".xlsx, .xls, .csv" onchange="handleRefExcelUpload(event)" class="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+            </div>
+
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h2 class="text-xl font-semibold mb-4 text-gray-700" id="refFormTitle">Add Referral Profile Entry</h2>
                 <form id="referralForm" onsubmit="handleReferralSubmit(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -302,6 +320,57 @@
             }
         }
 
+        // --- Excel Upload: Base Catalogue ---
+        function handleBaseExcelUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (json.length === 0) {
+                        alert("The uploaded Excel file is empty.");
+                        return;
+                    }
+
+                    let count = 0;
+                    json.forEach(row => {
+                        const category = row['Category Name'] || row['category'] || row['Category'];
+                        const testName = row['Test Name'] || row['testName'] || row['Test'];
+                        const cost = parseFloat(row['Cost'] || row['cost']);
+                        const baseReferralPrice = parseFloat(row['Base Price'] || row['basePrice'] || row['Base Referral Price']);
+                        const sampleType = row['Sample Type'] || row['sampleType'] || 'Serum';
+                        const tat = row['TAT'] || row['tat'] || 'Daily';
+
+                        if (category && testName && !isNaN(cost) && !isNaN(baseReferralPrice)) {
+                            db.ref('baseCatalogue').push({
+                                category: String(category).trim(),
+                                testName: String(testName).trim(),
+                                cost: cost,
+                                baseReferralPrice: baseReferralPrice,
+                                sampleType: String(sampleType).trim(),
+                                tat: String(tat).trim()
+                            });
+                            count++;
+                        }
+                    });
+
+                    alert(`Successfully imported ${count} base catalogue records!`);
+                } catch (err) {
+                    alert("Error parsing Excel file: " + err.message);
+                } finally {
+                    e.target.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
         // --- TAB 2: Referral Out Profiles Logic ---
         function populateCategoryDropdowns(selectedCategory = '') {
             const categorySelect = document.getElementById('refCategoryName');
@@ -394,6 +463,75 @@
             document.getElementById('refCancelBtn').classList.add('hidden');
             populateCategoryDropdowns();
             document.getElementById('refTestName').innerHTML = '<option value="">Select Test Name</option>';
+        }
+
+        // --- Excel Upload: Referral Profiles ---
+        function handleRefExcelUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (json.length === 0) {
+                        alert("The uploaded Excel file is empty.");
+                        return;
+                    }
+
+                    // Create a lookup map for base catalogue items by Test Name (case-insensitive)
+                    const baseMap = {};
+                    for (let bId in baseCatalogueData) {
+                        const item = baseCatalogueData[bId];
+                        if (item.testName) {
+                            baseMap[item.testName.trim().toLowerCase()] = item;
+                        }
+                    }
+
+                    let count = 0;
+                    let missingTests = [];
+
+                    json.forEach(row => {
+                        const entityName = row['Entity Name'] || row['entityName'];
+                        const categoryName = row['Category Name'] || row['categoryName'];
+                        const testName = row['Test Name'] || row['testName'];
+                        const referralPrice = parseFloat(row['Referral Price'] || row['referralPrice']);
+
+                        if (entityName && testName && !isNaN(referralPrice)) {
+                            const match = baseMap[String(testName).trim().toLowerCase()];
+                            if (match) {
+                                db.ref('referralProfiles').push({
+                                    entityName: String(entityName).trim(),
+                                    categoryName: match.category,
+                                    testName: match.testName,
+                                    cost: match.cost,
+                                    baseReferralPrice: match.baseReferralPrice,
+                                    referralPrice: referralPrice
+                                });
+                                count++;
+                            } else {
+                                missingTests.push(testName);
+                            }
+                        }
+                    });
+
+                    let msg = `Successfully imported ${count} referral price entries!`;
+                    if (missingTests.length > 0) {
+                        msg += `\n\nNote: The following tests were skipped because they do not exist in the Base Catalogue yet: ${[...new Set(missingTests)].join(', ')}`;
+                    }
+                    alert(msg);
+                } catch (err) {
+                    alert("Error parsing Excel file: " + err.message);
+                } finally {
+                    e.target.value = '';
+                }
+            };
+            reader.readAsArrayBuffer(file);
         }
 
         function renderMatrixView() {
@@ -496,12 +634,12 @@
             const wb = XLSX.utils.book_new();
 
             const baseArray = Object.keys(baseCatalogueData).map(id => ({
-                Category: baseCatalogueData[id].category,
+                'Category Name': baseCatalogueData[id].category,
                 'Test Name': baseCatalogueData[id].testName,
-                Cost: baseCatalogueData[id].cost,
-                'Base Referral Price': baseCatalogueData[id].baseReferralPrice,
+                'Cost': baseCatalogueData[id].cost,
+                'Base Price': baseCatalogueData[id].baseReferralPrice,
                 'Sample Type': baseCatalogueData[id].sampleType,
-                TAT: baseCatalogueData[id].tat
+                'TAT': baseCatalogueData[id].tat
             }));
             const wsBase = XLSX.utils.json_to_sheet(baseArray);
             XLSX.utils.book_append_sheet(wb, wsBase, "Base Catalogue");
@@ -510,8 +648,6 @@
                 'Entity Name': referralProfilesData[id].entityName,
                 'Category Name': referralProfilesData[id].categoryName,
                 'Test Name': referralProfilesData[id].testName,
-                Cost: referralProfilesData[id].cost,
-                'Base Referral Price': referralProfilesData[id].baseReferralPrice,
                 'Referral Price': referralProfilesData[id].referralPrice
             }));
             const wsRef = XLSX.utils.json_to_sheet(refArray);
