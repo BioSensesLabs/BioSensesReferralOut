@@ -139,11 +139,11 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-600 mb-1">Cost (Auto)</label>
-                        <input type="number" step="0.01" id="refCost" readonly class="w-full border bg-gray-100 rounded-lg px-3 py-2 text-gray-500 cursor-not-allowed">
+                        <input type="number" step="0.01" id="refCost" class="w-full border bg-gray-100 rounded-lg px-3 py-2 text-gray-600" onkeydown="return false;">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-600 mb-1">Base Referral Price (Auto)</label>
-                        <input type="number" step="0.01" id="refBaseReferralPrice" readonly class="w-full border bg-gray-100 rounded-lg px-3 py-2 text-gray-500 cursor-not-allowed">
+                        <input type="number" step="0.01" id="refBaseReferralPrice" class="w-full border bg-gray-100 rounded-lg px-3 py-2 text-gray-600" onkeydown="return false;">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-600 mb-1">Referral Price</label>
@@ -348,7 +348,7 @@
             const baseRefVal = document.getElementById('refBaseReferralPrice').value;
 
             if (!costVal || !baseRefVal) {
-                alert('Please select a valid Category and Test Name from the Base Catalogue to auto-populate the cost fields.');
+                alert('Cost fields are empty. Please re-select the Category and Test Name dropdowns.');
                 return;
             }
 
@@ -363,11 +363,14 @@
             };
 
             if (editId) {
-                db.ref('referralProfiles/' + editId).set(entry);
+                db.ref('referralProfiles/' + editId).set(entry).then(() => {
+                    resetReferralForm();
+                }).catch(err => alert("Error saving: " + err.message));
             } else {
-                db.ref('referralProfiles').push(entry);
+                db.ref('referralProfiles').push(entry).then(() => {
+                    resetReferralForm();
+                }).catch(err => alert("Error saving: " + err.message));
             }
-            resetReferralForm();
         }
 
         function resetReferralForm() {
@@ -383,16 +386,13 @@
             const headerRow = document.getElementById('matrixHeaderRow');
             const tbody = document.getElementById('matrixTableBody');
 
-            // Gather all distinct entity names
             const entities = [...new Set(Object.values(referralProfilesData).map(item => item.entityName))];
             
-            // Build dynamic headers (Test Name + each entity)
             headerRow.innerHTML = `<th class="p-3 border-r bg-gray-50">Test Name</th>`;
             entities.forEach(entity => {
                 headerRow.innerHTML += `<th class="p-3 border-r text-center bg-gray-50" colspan="3">${entity}</th>`;
             });
 
-            // Gather all distinct test names present in Base Catalogue
             const tests = [...new Set(Object.values(baseCatalogueData).map(item => item.testName))];
 
             tbody.innerHTML = '';
@@ -401,7 +401,6 @@
                 return;
             }
 
-            // Map data for quick lookup: matrixData[testName][entityName] = entry
             const matrixData = {};
             for (let id in referralProfilesData) {
                 const ref = referralProfilesData[id];
@@ -461,7 +460,6 @@
         function exportToExcel() {
             const wb = XLSX.utils.book_new();
 
-            // Sheet 1: Base Catalogue
             const baseArray = Object.keys(baseCatalogueData).map(id => ({
                 Category: baseCatalogueData[id].category,
                 'Test Name': baseCatalogueData[id].testName,
@@ -473,7 +471,6 @@
             const wsBase = XLSX.utils.json_to_sheet(baseArray);
             XLSX.utils.book_append_sheet(wb, wsBase, "Base Catalogue");
 
-            // Sheet 2: Referral Profiles
             const refArray = Object.keys(referralProfilesData).map(id => ({
                 'Entity Name': referralProfilesData[id].entityName,
                 'Category Name': referralProfilesData[id].categoryName,
@@ -485,7 +482,6 @@
             const wsRef = XLSX.utils.json_to_sheet(refArray);
             XLSX.utils.book_append_sheet(wb, wsRef, "Referral Profiles");
 
-            // Trigger Download
             XLSX.writeFile(wb, "Catalogue_and_Referral_Data.xlsx");
         }
     </script>
