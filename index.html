@@ -343,13 +343,22 @@
 
         function handleReferralSubmit(e) {
             e.preventDefault();
+            
+            const costVal = document.getElementById('refCost').value;
+            const baseRefVal = document.getElementById('refBaseReferralPrice').value;
+
+            if (!costVal || !baseRefVal) {
+                alert('Please select a valid Category and Test Name from the Base Catalogue to auto-populate the cost fields.');
+                return;
+            }
+
             const editId = document.getElementById('refEditId').value;
             const entry = {
                 entityName: document.getElementById('refEntityName').value.trim(),
                 categoryName: document.getElementById('refCategoryName').value,
                 testName: document.getElementById('refTestName').value,
-                cost: parseFloat(document.getElementById('refCost').value),
-                baseReferralPrice: parseFloat(document.getElementById('refBaseReferralPrice').value),
+                cost: parseFloat(costVal),
+                baseReferralPrice: parseFloat(baseRefVal),
                 referralPrice: parseFloat(document.getElementById('refReferralPrice').value)
             };
 
@@ -382,10 +391,6 @@
             entities.forEach(entity => {
                 headerRow.innerHTML += `<th class="p-3 border-r text-center bg-gray-50" colspan="3">${entity}</th>`;
             });
-
-            if(entities.length > 0) {
-                // Add sub-headers row or handle layout. Let's append subcolumns cleanly:
-            }
 
             // Gather all distinct test names present in Base Catalogue
             const tests = [...new Set(Object.values(baseCatalogueData).map(item => item.testName))];
