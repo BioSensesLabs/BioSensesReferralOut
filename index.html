@@ -843,7 +843,6 @@
             const inputClass = `matrix-input-${safeId(testName)}`;
             const inputs = document.querySelectorAll(`.${inputClass}`);
 
-            // Find base item data
             let baseItem = null;
             for (let bId in baseCatalogueData) {
                 if (baseCatalogueData[bId].testName === testName) {
@@ -857,7 +856,6 @@
                 return;
             }
 
-            // Existing profile records map for this test
             const existingProfiles = {};
             for (let id in referralProfilesData) {
                 const ref = referralProfilesData[id];
@@ -874,10 +872,8 @@
 
                 if (val !== '' && !isNaN(numericVal)) {
                     if (existingProfiles[entityName]) {
-                        // Update existing node
                         updates[`referralProfiles/${existingProfiles[entityName]}/referralPrice`] = numericVal;
                     } else {
-                        // Create new profile record
                         const newRefKey = db.ref('referralProfiles').push().key;
                         updates[`referralProfiles/${newRefKey}`] = {
                             entityName: entityName,
@@ -889,17 +885,33 @@
                         };
                     }
                 } else if (val === '' && existingProfiles[entityName]) {
-                    // If cleared, remove entry
-                    db.ref('referralProfiles/' + existingProfiles[entityName]).remove();
+                    updates[`referralProfiles/${existingProfiles[entityName]}`] = null;
                 }
             });
 
+            // Immediately clear edit mode state and render local UI updates instantly
+            editingMatrixRowTest = null;
+
             if (Object.keys(updates).length > 0) {
-                db.ref().update(updates).then(() => {
-                    editingMatrixRowTest = null;
-                }).catch(err => alert("Error updating records: " + err.message));
+                // Apply local updates immediately to the cached data object so re-rendering happens instantaneously
+                for (let path in updates) {
+                    const parts = path.split('/');
+                    if (updates[path] === null) {
+                        delete referralProfilesData[parts[1]];
+                    } else {
+                        let target = referralProfilesData;
+                        for (let i = 1; i < parts.length - 1; i++) {
+                            if (!target[parts[i]]) target[parts[i]] = {};
+                            target = target[parts[i]];
+                        }
+                        target[parts[parts.length - 1]] = updates[path];
+                    }
+                }
+                renderMatrixView();
+
+                // Persist changes to Firebase in the background
+                db.ref().update(updates).catch(err => alert("Error updating records: " + err.message));
             } else {
-                editingMatrixRowTest = null;
                 renderMatrixView();
             }
         }
@@ -913,6 +925,15 @@
                         updates[`referralProfiles/${id}`] = null;
                     }
                 }
+                
+                // Immediately remove from local state for instant feedback
+                for (let id in referralProfilesData) {
+                    if (referralProfilesData[id].testName === testName) {
+                        delete referralProfilesData[id];
+                    }
+                }
+                renderMatrixView();
+
                 if (Object.keys(updates).length > 0) {
                     db.ref().update(updates);
                 }
@@ -988,7 +1009,7 @@
                     }
                 });
 
-                matrixExportArray.push(rowObj);
+    matrixExportArray.push(rowObj);
             }
 
             const wsMatrix = XLSX.utils.json_to_sheet(matrixExportArray);
