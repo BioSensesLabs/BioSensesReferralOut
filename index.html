@@ -12,59 +12,70 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans min-p-6">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen pb-12">
 
-    <div class="max-w-7xl mx-auto p-4 sm:p-6">
-        <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <!-- Header Section -->
+        <header class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div>
-                <h1 class="text-3xl font-bold text-blue-600">Catalogue & Referral Manager</h1>
-                <p class="text-sm text-gray-500">Manage base testing catalogues and multi-entity referral pricing matrices.</p>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="w-3 h-3 bg-blue-600 rounded-full inline-block"></span>
+                    <h1 class="text-2xl font-bold tracking-tight text-slate-900">Catalogue & Referral Manager</h1>
+                </div>
+                <p class="text-sm text-slate-500">Manage base testing catalogues and multi-entity referral pricing matrices seamlessly.</p>
             </div>
-            <button onclick="exportToExcel()" class="bg-green-600 hover:bg-green-700 text-white font-medium px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
-                Export Data to Excel
+            <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm px-4 py-2.5 rounded-xl shadow-sm hover:shadow transition-all flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Export Matrix to Excel
             </button>
         </header>
 
         <!-- Navigation Tabs -->
-        <div class="flex border-b border-gray-200 mb-6">
-            <button onclick="switchTab('baseCatalogue')" id="tab-baseCatalogue" class="py-2 px-6 font-semibold border-b-2 border-blue-600 text-blue-600 focus:outline-none transition">1. Base Catalogue</button>
-            <button onclick="switchTab('referralProfiles')" id="tab-referralProfiles" class="py-2 px-6 font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 focus:outline-none transition">2. Referral Out Profiles</button>
+        <div class="flex border-b border-slate-200 mb-6 gap-8">
+            <button onclick="switchTab('baseCatalogue')" id="tab-baseCatalogue" class="pb-3 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 focus:outline-none transition-all flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                1. Base Catalogue
+            </button>
+            <button onclick="switchTab('referralProfiles')" id="tab-referralProfiles" class="pb-3 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 focus:outline-none transition-all flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                2. Referral Out Profiles
+            </button>
         </div>
 
         <!-- TAB 1: Base Catalogue -->
         <div id="section-baseCatalogue" class="space-y-6">
             <!-- BULK UPLOAD BOX -->
-            <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
                 <div>
                     <h3 class="font-semibold text-blue-900 text-sm">Bulk Upload Base Catalogue via Excel</h3>
-                    <p class="text-xs text-blue-700 mt-0.5">Required Headers: <code class="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-mono">Category Name, Test Name, Cost, Base Price, Sample Type, TAT</code></p>
+                    <p class="text-xs text-blue-700/80 mt-0.5">Required Headers: <code class="bg-white/80 px-2 py-0.5 rounded border border-blue-200 font-mono text-[11px]">Category Name, Test Name, Cost, Base Price, Sample Type, TAT</code></p>
                 </div>
-                <input type="file" id="baseExcelFile" accept=".xlsx, .xls, .csv" onchange="handleBaseExcelUpload(event)" class="text-xs text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+                <input type="file" id="baseExcelFile" accept=".xlsx, .xls, .csv" onchange="handleBaseExcelUpload(event)" class="text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h2 class="text-xl font-semibold mb-4 text-gray-700" id="baseFormTitle">Add New Base Entry</h2>
-                <form id="baseCatalogueForm" onsubmit="handleBaseSubmit(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h2 class="text-lg font-bold mb-4 text-slate-800" id="baseFormTitle">Add New Base Entry</h2>
+                <form id="baseCatalogueForm" onsubmit="handleBaseSubmit(event)" class="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <input type="hidden" id="baseEditId">
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Category Name</label>
-                        <input type="text" id="baseCategory" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Category Name</label>
+                        <input type="text" id="baseCategory" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Test Name</label>
-                        <input type="text" id="baseTestName" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Test Name</label>
+                        <input type="text" id="baseTestName" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Cost</label>
-                        <input type="number" step="0.01" id="baseCost" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Cost</label>
+                        <input type="number" step="0.01" id="baseCost" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Base Referral Price</label>
-                        <input type="number" step="0.01" id="baseReferralPrice" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Base Referral Price</label>
+                        <input type="number" step="0.01" id="baseReferralPrice" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Sample Type</label>
-                        <select id="baseSampleType" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Sample Type</label>
+                        <select id="baseSampleType" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all">
                             <option value="">Select Sample Type</option>
                             <option value="EDTA">EDTA</option>
                             <option value="Serum">Serum</option>
@@ -76,8 +87,8 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">TAT</label>
-                        <select id="baseTat" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">TAT</label>
+                        <select id="baseTat" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all">
                             <option value="">Select TAT</option>
                             <option value="Daily">Daily</option>
                             <option value="2 Days">2 Days</option>
@@ -91,21 +102,20 @@
                             <option value="10 Days">10 Days</option>
                         </select>
                     </div>
-                    <div class="md:col-span-3 flex justify-end gap-2 mt-2">
-                        <button type="button" id="baseCancelBtn" onclick="resetBaseForm()" class="hidden bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg transition">Cancel</button>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg shadow transition">Save Entry</button>
+                    <div class="md:col-span-3 flex justify-end gap-3 mt-2">
+                        <button type="button" id="baseCancelBtn" onclick="resetBaseForm()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-medium px-5 py-2.5 rounded-xl transition">Cancel</button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-6 py-2.5 rounded-xl shadow-sm hover:shadow transition-all">Save Entry</button>
                     </div>
                 </form>
             </div>
 
             <!-- Tabular View with Search & Filter -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <h3 class="text-lg font-semibold text-gray-700">Base Catalogue Records</h3>
-                    <!-- Search & Filter Controls -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <h3 class="text-base font-bold text-slate-800">Base Catalogue Records</h3>
                     <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                        <input type="text" id="baseSearchInput" oninput="renderBaseTable()" placeholder="Search test or category..." class="border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-full sm:w-64">
-                        <select id="baseCategoryFilter" onchange="renderBaseTable()" class="border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <input type="text" id="baseSearchInput" oninput="renderBaseTable()" placeholder="Search test or category..." class="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all w-full sm:w-64">
+                        <select id="baseCategoryFilter" onchange="renderBaseTable()" class="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all">
                             <option value="">All Categories</option>
                         </select>
                     </div>
@@ -113,17 +123,17 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-gray-50 text-gray-600 uppercase text-xs tracking-wider border-b">
-                                <th class="p-3">Category</th>
-                                <th class="p-3">Test Name</th>
-                                <th class="p-3">Cost</th>
-                                <th class="p-3">Base Referral Price</th>
-                                <th class="p-3">Sample Type</th>
-                                <th class="p-3">TAT</th>
-                                <th class="p-3 text-right">Actions</th>
+                            <tr class="bg-slate-50 text-slate-500 uppercase text-[11px] font-semibold tracking-wider border-b border-slate-100">
+                                <th class="py-3.5 px-6">Category</th>
+                                <th class="py-3.5 px-4">Test Name</th>
+                                <th class="py-3.5 px-4">Cost</th>
+                                <th class="py-3.5 px-4">Base Referral Price</th>
+                                <th class="py-3.5 px-4">Sample Type</th>
+                                <th class="py-3.5 px-4">TAT</th>
+                                <th class="py-3.5 px-6 text-center">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="baseTableBody" class="divide-y divide-gray-100 text-sm">
+                        <tbody id="baseTableBody" class="divide-y divide-slate-100 text-sm">
                             <!-- Populated dynamically -->
                         </tbody>
                     </table>
@@ -134,69 +144,68 @@
         <!-- TAB 2: Referral Out Profiles -->
         <div id="section-referralProfiles" class="space-y-6 hidden">
             <!-- BULK UPLOAD BOX -->
-            <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
                 <div>
                     <h3 class="font-semibold text-blue-900 text-sm">Bulk Upload Referral Prices via Excel</h3>
-                    <p class="text-xs text-blue-700 mt-0.5">Required Headers: <code class="bg-white px-1.5 py-0.5 rounded border border-blue-200 font-mono">Entity Name, Category Name, Test Name, Referral Price</code></p>
+                    <p class="text-xs text-blue-700/80 mt-0.5">Required Headers: <code class="bg-white/80 px-2 py-0.5 rounded border border-blue-200 font-mono text-[11px]">Entity Name, Category Name, Test Name, Referral Price</code></p>
                 </div>
-                <input type="file" id="refExcelFile" accept=".xlsx, .xls, .csv" onchange="handleRefExcelUpload(event)" class="text-xs text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+                <input type="file" id="refExcelFile" accept=".xlsx, .xls, .csv" onchange="handleRefExcelUpload(event)" class="text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
             </div>
 
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h2 class="text-xl font-semibold mb-4 text-gray-700" id="refFormTitle">Add Referral Profile Entry</h2>
-                <form id="referralForm" onsubmit="handleReferralSubmit(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h2 class="text-lg font-bold mb-4 text-slate-800" id="refFormTitle">Add Referral Profile Entry</h2>
+                <form id="referralForm" onsubmit="handleReferralSubmit(event)" class="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <input type="hidden" id="refEditId">
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Entity Name</label>
-                        <input type="text" id="refEntityName" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Entity Name</label>
+                        <input type="text" id="refEntityName" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Category Name</label>
-                        <select id="refCategoryName" onchange="filterTestsByCategory()" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Category Name</label>
+                        <select id="refCategoryName" onchange="filterTestsByCategory()" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all">
                             <option value="">Select Category</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Test Name</label>
-                        <select id="refTestName" onchange="autoPopulateBaseFields()" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Test Name</label>
+                        <select id="refTestName" onchange="autoPopulateBaseFields()" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all">
                             <option value="">Select Test Name</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Cost (Auto)</label>
-                        <input type="number" step="0.01" id="refCost" class="w-full border bg-gray-100 rounded-lg px-3 py-2 text-gray-600" onkeydown="return false;">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Cost (Auto)</label>
+                        <input type="number" step="0.01" id="refCost" class="w-full border border-slate-200 bg-slate-100 rounded-xl px-3.5 py-2.5 text-sm text-slate-500 select-none cursor-not-allowed" onkeydown="return false;">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Base Referral Price (Auto)</label>
-                        <input type="number" step="0.01" id="refBaseReferralPrice" class="w-full border bg-gray-100 rounded-lg px-3 py-2 text-gray-600" onkeydown="return false;">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Base Referral Price (Auto)</label>
+                        <input type="number" step="0.01" id="refBaseReferralPrice" class="w-full border border-slate-200 bg-slate-100 rounded-xl px-3.5 py-2.5 text-sm text-slate-500 select-none cursor-not-allowed" onkeydown="return false;">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Referral Price</label>
-                        <input type="number" step="0.01" id="refReferralPrice" required class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Referral Price</label>
+                        <input type="number" step="0.01" id="refReferralPrice" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all">
                     </div>
-                    <div class="md:col-span-3 flex justify-end gap-2 mt-2">
-                        <button type="button" id="refCancelBtn" onclick="resetReferralForm()" class="hidden bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg transition">Cancel</button>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg shadow transition">Save Referral Entry</button>
+                    <div class="md:col-span-3 flex justify-end gap-3 mt-2">
+                        <button type="button" id="refCancelBtn" onclick="resetReferralForm()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-medium px-5 py-2.5 rounded-xl transition">Cancel</button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-6 py-2.5 rounded-xl shadow-sm hover:shadow transition-all">Save Referral Entry</button>
                     </div>
                 </form>
             </div>
 
             <!-- 2D Tabular Matrix View with Search & Entity Filter -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <h3 class="text-lg font-semibold text-gray-700">Referral Matrix View (Tests vs. Entities)</h3>
-                    <!-- Matrix Search & Entity Checkbox Filter Dropdown -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <h3 class="text-base font-bold text-slate-800">Referral Matrix View (Tests vs. Entities)</h3>
                     <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-                        <input type="text" id="matrixSearchInput" oninput="renderMatrixView()" placeholder="Search test or category..." class="border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none w-full sm:w-64">
-                        <select id="matrixCategoryFilter" onchange="renderMatrixView()" class="border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <input type="text" id="matrixSearchInput" oninput="renderMatrixView()" placeholder="Search test or category..." class="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all w-full sm:w-64">
+                        <select id="matrixCategoryFilter" onchange="renderMatrixView()" class="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white focus:outline-none transition-all">
                             <option value="">All Categories</option>
                         </select>
                         <div class="relative inline-block text-left">
-                            <button type="button" onclick="toggleEntityDropdown()" class="border bg-white rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 focus:outline-none">
-                                Filter Entities <span id="entityFilterCount" class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full text-xs">All</span>
+                            <button type="button" onclick="toggleEntityDropdown()" class="bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2 text-sm font-medium text-slate-700 flex items-center gap-2 focus:outline-none transition-all">
+                                Filter Entities <span id="entityFilterCount" class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-semibold">All</span>
                             </button>
-                            <div id="entityCheckboxDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-3 space-y-2 max-h-60 overflow-y-auto">
-                                <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Select Entities</div>
+                            <div id="entityCheckboxDropdown" class="hidden absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl z-20 p-4 space-y-2 max-h-60 overflow-y-auto">
+                                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Select Entities</div>
                                 <div id="entityCheckboxesContainer" class="space-y-1.5">
                                     <!-- Dynamic entity checkboxes -->
                                 </div>
@@ -207,17 +216,16 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-xs" id="matrixTable">
                         <thead>
-                            <tr id="matrixHeaderTop" class="bg-gray-100 text-gray-700 font-semibold border-b">
-                                <th class="p-3 border-r" rowspan="2">Test Name</th>
-                                <th class="p-3 border-r text-center bg-gray-50" rowspan="2">Cost</th>
-                                <th class="p-3 border-r text-center bg-gray-50" rowspan="2">Base Ref</th>
-                                <!-- Dynamic entity top headers inserted here -->
+                            <tr id="matrixHeaderTop" class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                                <th class="p-3.5 border-r border-slate-200" rowspan="2">Test Name</th>
+                                <th class="p-3.5 border-r border-slate-200 text-center bg-slate-50" rowspan="2">Cost</th>
+                                <th class="p-3.5 border-r border-slate-200 text-center bg-slate-50" rowspan="2">Base Ref</th>
                             </tr>
-                            <tr id="matrixHeaderSub" class="bg-gray-50 text-gray-600 uppercase tracking-wider border-b">
-                                <!-- Dynamic sub-columns (Ref, Actions) inserted here -->
+                            <tr id="matrixHeaderSub" class="bg-slate-50 text-slate-500 uppercase font-semibold text-[11px] tracking-wider border-b border-slate-200">
+                                <!-- Dynamic sub-columns inserted here -->
                             </tr>
                         </thead>
-                        <tbody id="matrixTableBody" class="divide-y divide-gray-100">
+                        <tbody id="matrixTableBody" class="divide-y divide-slate-100">
                         </tbody>
                     </table>
                 </div>
@@ -278,10 +286,10 @@
                 const btn = document.getElementById(`tab-${id}`);
                 if (id === tabId) {
                     btn.classList.add('border-blue-600', 'text-blue-600');
-                    btn.classList.remove('border-transparent', 'text-gray-500');
+                    btn.classList.remove('border-transparent', 'text-slate-500');
                 } else {
                     btn.classList.remove('border-blue-600', 'text-blue-600');
-                    btn.classList.add('border-transparent', 'text-gray-500');
+                    btn.classList.add('border-transparent', 'text-slate-500');
                 }
             });
         }
@@ -316,7 +324,7 @@
             
             const entries = Object.entries(baseCatalogueData);
             if (entries.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">No records found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400">No records found.</td></tr>`;
                 return;
             }
 
@@ -330,23 +338,29 @@
 
                 filteredCount++;
                 tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50 text-sm">
-                        <td class="p-3 font-medium text-gray-800">${category}</td>
-                        <td class="p-3">${testName}</td>
-                        <td class="p-3">${item.cost.toFixed(2)}</td>
-                        <td class="p-3">${item.baseReferralPrice.toFixed(2)}</td>
-                        <td class="p-3"><span class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs font-semibold">${item.sampleType}</span></td>
-                        <td class="p-3">${item.tat}</td>
-                        <td class="p-3 text-right space-x-2">
-                            <button onclick="editBaseEntry('${id}')" class="text-blue-600 hover:text-blue-800 font-medium">Edit</button>
-                            <button onclick="deleteBaseEntry('${id}')" class="text-red-600 hover:text-red-800 font-medium">Delete</button>
+                    <tr class="hover:bg-slate-50/80 transition-colors text-sm">
+                        <td class="py-3.5 px-6 font-semibold text-slate-800">${category}</td>
+                        <td class="py-3.5 px-4 text-slate-700">${testName}</td>
+                        <td class="py-3.5 px-4 text-slate-600">${item.cost.toFixed(2)}</td>
+                        <td class="py-3.5 px-4 text-slate-600">${item.baseReferralPrice.toFixed(2)}</td>
+                        <td class="py-3.5 px-4"><span class="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold">${item.sampleType}</span></td>
+                        <td class="py-3.5 px-4 text-slate-600">${item.tat}</td>
+                        <td class="py-3.5 px-6 text-center">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button onclick="editBaseEntry('${id}')" title="Edit Entry" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </button>
+                                <button onclick="deleteBaseEntry('${id}')" title="Delete Entry" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
             });
 
             if (filteredCount === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">No matching records found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400">No matching records found.</td></tr>`;
             }
         }
 
@@ -443,7 +457,6 @@
         function populateCategoryDropdowns(selectedCategory = '') {
             const categories = [...new Set(Object.values(baseCatalogueData).map(item => item.category ? item.category.trim() : ''))].filter(Boolean);
             
-            // Ref Form Dropdown
             const categorySelect = document.getElementById('refCategoryName');
             categorySelect.innerHTML = '<option value="">Select Category</option>';
             categories.forEach(cat => {
@@ -451,7 +464,6 @@
                 categorySelect.innerHTML += `<option value="${cat}" ${isSelected}>${cat}</option>`;
             });
 
-            // Base Table Filter Dropdown
             const baseFilter = document.getElementById('baseCategoryFilter');
             const currentBaseVal = baseFilter.value;
             baseFilter.innerHTML = '<option value="">All Categories</option>';
@@ -460,7 +472,6 @@
                 baseFilter.innerHTML += `<option value="${cat}" ${isSelected}>${cat}</option>`;
             });
 
-            // Matrix Table Filter Dropdown
             const matrixFilter = document.getElementById('matrixCategoryFilter');
             const currentMatrixVal = matrixFilter.value;
             matrixFilter.innerHTML = '<option value="">All Categories</option>';
@@ -632,9 +643,9 @@
             allEntities.forEach(entity => {
                 const isChecked = isAllSelected || selectedEntitiesFilter.has(entity);
                 container.innerHTML += `
-                    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 p-1 rounded">
-                        <input type="checkbox" value="${entity}" ${isChecked ? 'checked' : ''} onchange="handleEntityCheckboxChange(event)" class="rounded text-blue-600 focus:ring-blue-500">
-                        <span class="truncate">${entity}</span>
+                    <label class="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer hover:bg-slate-50 p-1.5 rounded-lg transition">
+                        <input type="checkbox" value="${entity}" ${isChecked ? 'checked' : ''} onchange="handleEntityCheckboxChange(event)" class="rounded text-blue-600 focus:ring-blue-500 w-4 h-4">
+                        <span class="truncate font-medium">${entity}</span>
                     </label>
                 `;
             });
@@ -686,19 +697,19 @@
                 : allEntities.filter(ent => selectedEntitiesFilter.has(ent));
             
             topHeaderRow.innerHTML = `
-                <th class="p-3 border-r" rowspan="2">Test Name</th>
-                <th class="p-3 border-r text-center bg-gray-50" rowspan="2">Cost</th>
-                <th class="p-3 border-r text-center bg-gray-50" rowspan="2">Base Ref</th>
+                <th class="p-3.5 border-r border-slate-200" rowspan="2">Test Name</th>
+                <th class="p-3.5 border-r border-slate-200 text-center bg-slate-50" rowspan="2">Cost</th>
+                <th class="p-3.5 border-r border-slate-200 text-center bg-slate-50" rowspan="2">Base Ref</th>
             `;
             activeEntities.forEach(entity => {
-                topHeaderRow.innerHTML += `<th class="p-2 border-r text-center bg-gray-100" colspan="2">${entity}</th>`;
+                topHeaderRow.innerHTML += `<th class="p-2.5 border-r border-slate-200 text-center bg-slate-100 font-semibold text-slate-700" colspan="2">${entity}</th>`;
             });
 
             subHeaderRow.innerHTML = '';
             activeEntities.forEach(() => {
                 subHeaderRow.innerHTML += `
-                    <th class="p-2 border-r text-center">Ref Price & Diff</th>
-                    <th class="p-2 border-r text-center">Actions</th>
+                    <th class="p-2.5 border-r border-slate-200 text-center">Ref Price & Diff</th>
+                    <th class="p-2.5 border-r border-slate-200 text-center">Actions</th>
                 `;
             });
 
@@ -709,7 +720,7 @@
 
             tbody.innerHTML = '';
             if (baseTestsList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="100" class="p-4 text-center text-gray-400">No tests available in Base Catalogue.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="100" class="py-8 text-center text-slate-400">No tests available in Base Catalogue.</td></tr>`;
                 return;
             }
 
@@ -733,10 +744,10 @@
                 const baseRefPrice = baseItem.baseReferralPrice;
 
                 let rowHtml = `
-                    <tr class="hover:bg-gray-50">
-                        <td class="p-3 font-medium border-r bg-white text-gray-800">${testName}</td>
-                        <td class="p-3 border-r text-center bg-gray-50 text-gray-600">${baseCost.toFixed(2)}</td>
-                        <td class="p-3 border-r text-center bg-gray-50 text-gray-600">${baseRefPrice.toFixed(2)}</td>
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="p-3.5 font-semibold border-r border-slate-100 bg-white text-slate-800">${testName}</td>
+                        <td class="p-3.5 border-r border-slate-100 text-center bg-slate-50/50 text-slate-600">${baseCost.toFixed(2)}</td>
+                        <td class="p-3.5 border-r border-slate-100 text-center bg-slate-50/50 text-slate-600">${baseRefPrice.toFixed(2)}</td>
                 `;
                 
                 activeEntities.forEach(entity => {
@@ -746,27 +757,33 @@
                         const diffCost = refPrice - baseCost;
                         const diffBase = refPrice - baseRefPrice;
 
-                        const costClass = diffCost >= 0 ? 'text-green-600' : 'text-red-600';
-                        const baseClass = diffBase >= 0 ? 'text-green-600' : 'text-red-600';
+                        const costClass = diffCost >= 0 ? 'text-emerald-600' : 'text-rose-600';
+                        const baseClass = diffBase >= 0 ? 'text-emerald-600' : 'text-rose-600';
 
                         const formatDiff = (val) => (val >= 0 ? `+${val.toFixed(2)}` : val.toFixed(2));
 
                         rowHtml += `
-                            <td class="p-2 border-r text-center bg-white">
-                                <div class="font-semibold text-blue-600">${refPrice.toFixed(2)}</div>
-                                <div class="text-[11px] text-gray-500">
+                            <td class="p-2.5 border-r border-slate-100 text-center bg-white">
+                                <div class="font-bold text-blue-600">${refPrice.toFixed(2)}</div>
+                                <div class="text-[10px] text-slate-400 font-medium">
                                     (<span class="${costClass}">${formatDiff(diffCost)}</span>, <span class="${baseClass}">${formatDiff(diffBase)}</span>)
                                 </div>
                             </td>
-                            <td class="p-2 border-r text-center space-x-1 bg-white">
-                                <button onclick="editReferralEntry('${record.id}')" class="text-blue-600 hover:underline">Edit</button>
-                                <button onclick="deleteReferralEntry('${record.id}')" class="text-red-600 hover:underline">Del</button>
+                            <td class="p-2.5 border-r border-slate-100 text-center bg-white">
+                                <div class="flex items-center justify-center gap-1">
+                                    <button onclick="editReferralEntry('${record.id}')" title="Edit Entry" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    </button>
+                                    <button onclick="deleteReferralEntry('${record.id}')" title="Delete Entry" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </div>
                             </td>
                         `;
                     } else {
                         rowHtml += `
-                            <td class="p-2 border-r text-center text-gray-300 bg-white">-</td>
-                            <td class="p-2 border-r text-center text-gray-300 bg-white">-</td>
+                            <td class="p-2.5 border-r border-slate-100 text-center text-slate-300 bg-white">-</td>
+                            <td class="p-2.5 border-r border-slate-100 text-center text-slate-300 bg-white">-</td>
                         `;
                     }
                 });
@@ -776,7 +793,7 @@
             });
 
             if (filteredCount === 0) {
-                tbody.innerHTML = `<tr><td colspan="100" class="p-4 text-center text-gray-400">No matching records found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="100" class="py-8 text-center text-slate-400">No matching records found.</td></tr>`;
             }
         }
 
@@ -801,11 +818,10 @@
             }
         }
 
-        // --- FIXED: Full Structured Excel Export ---
+        // --- Structured Excel Export ---
         function exportToExcel() {
             const wb = XLSX.utils.book_new();
 
-            // 1. Base Catalogue Sheet
             const baseArray = Object.keys(baseCatalogueData).map(id => ({
                 'Category Name': baseCatalogueData[id].category,
                 'Test Name': baseCatalogueData[id].testName,
@@ -817,7 +833,6 @@
             const wsBase = XLSX.utils.json_to_sheet(baseArray);
             XLSX.utils.book_append_sheet(wb, wsBase, "Base Catalogue");
 
-            // 2. Referral Matrix Sheet (Structured completely like the Matrix view with computed diffs)
             const allEntities = [...new Set(Object.values(referralProfilesData).map(item => item.entityName))];
             const matrixDataMap = {};
             for (let id in referralProfilesData) {
@@ -841,7 +856,6 @@
                     if (refPrice !== undefined) {
                         const diffCost = refPrice - item.cost;
                         const diffBase = refPrice - item.baseReferralPrice;
-                        
                         const formatVal = (v) => (v >= 0 ? `+${v.toFixed(2)}` : v.toFixed(2));
                         
                         rowObj[`${entity} - Ref Price`] = refPrice;
@@ -858,7 +872,6 @@
             const wsMatrix = XLSX.utils.json_to_sheet(matrixExportArray);
             XLSX.utils.book_append_sheet(wb, wsMatrix, "Referral Matrix View");
 
-            // Write File
             XLSX.writeFile(wb, "Catalogue_and_Referral_Matrix.xlsx");
         }
     </script>
