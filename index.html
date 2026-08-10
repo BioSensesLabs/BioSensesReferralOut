@@ -251,6 +251,7 @@
         let baseCatalogueData = {};
         let referralProfilesData = {};
         let selectedEntitiesFilter = new Set();
+        let editingMatrixRowTest = null; // Tracks which test name row is currently being edited inline
 
         // Real-time Listeners
         db.ref('baseCatalogue').on('value', (snapshot) => {
@@ -700,16 +701,16 @@
                 <th class="p-3.5 border-r border-slate-200" rowspan="2">Test Name</th>
                 <th class="p-3.5 border-r border-slate-200 text-center bg-slate-50" rowspan="2">Cost</th>
                 <th class="p-3.5 border-r border-slate-200 text-center bg-slate-50" rowspan="2">Base Ref</th>
+                <th class="p-3.5 border-r border-slate-200 text-center bg-slate-50" rowspan="2">Actions</th>
             `;
             activeEntities.forEach(entity => {
-                topHeaderRow.innerHTML += `<th class="p-2.5 border-r border-slate-200 text-center bg-slate-100 font-semibold text-slate-700" colspan="2">${entity}</th>`;
+                topHeaderRow.innerHTML += `<th class="p-2.5 border-r border-slate-200 text-center bg-slate-100 font-semibold text-slate-700" colspan="1">${entity}</th>`;
             });
 
             subHeaderRow.innerHTML = '';
             activeEntities.forEach(() => {
                 subHeaderRow.innerHTML += `
                     <th class="p-2.5 border-r border-slate-200 text-center">Ref Price & Diff</th>
-                    <th class="p-2.5 border-r border-slate-200 text-center">Actions</th>
                 `;
             });
 
@@ -742,49 +743,75 @@
                 filteredCount++;
                 const baseCost = baseItem.cost;
                 const baseRefPrice = baseItem.baseReferralPrice;
+                const isEditing = editingMatrixRowTest === testName;
 
                 let rowHtml = `
                     <tr class="hover:bg-slate-50/80 transition-colors">
                         <td class="p-3.5 font-semibold border-r border-slate-100 bg-white text-slate-800">${testName}</td>
                         <td class="p-3.5 border-r border-slate-100 text-center bg-slate-50/50 text-slate-600">${baseCost.toFixed(2)}</td>
                         <td class="p-3.5 border-r border-slate-100 text-center bg-slate-50/50 text-slate-600">${baseRefPrice.toFixed(2)}</td>
+                        <td class="p-3.5 border-r border-slate-100 text-center bg-slate-50/50">
                 `;
+
+                if (isEditing) {
+                    rowHtml += `
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="saveMatrixRowEdit('${encodeURIComponent(testName)}', '${category}')" title="Save Row" class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            </button>
+                            <button onclick="cancelMatrixRowEdit()" title="Cancel" class="p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    rowHtml += `
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="startMatrixRowEdit('${encodeURIComponent(testName)}')" title="Edit Row Entries" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </button>
+                            <button onclick="deleteMatrixRowEntries('${encodeURIComponent(testName)}')" title="Delete All Entries for Test" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
+                    `;
+                }
+                rowHtml += `</td>`;
                 
                 activeEntities.forEach(entity => {
                     const record = matrixData[testName] && matrixData[testName][entity];
-                    if (record) {
-                        const refPrice = record.referralPrice;
-                        const diffCost = refPrice - baseCost;
-                        const diffBase = refPrice - baseRefPrice;
+                    const currentRefPrice = record ? record.referralPrice : '';
 
-                        const costClass = diffCost >= 0 ? 'text-emerald-600' : 'text-rose-600';
-                        const baseClass = diffBase >= 0 ? 'text-emerald-600' : 'text-rose-600';
-
-                        const formatDiff = (val) => (val >= 0 ? `+${val.toFixed(2)}` : val.toFixed(2));
-
+                    if (isEditing) {
                         rowHtml += `
-                            <td class="p-2.5 border-r border-slate-100 text-center bg-white">
-                                <div class="font-bold text-blue-600">${refPrice.toFixed(2)}</div>
-                                <div class="text-[10px] text-slate-400 font-medium">
-                                    (<span class="${costClass}">${formatDiff(diffCost)}</span>, <span class="${baseClass}">${formatDiff(diffBase)}</span>)
-                                </div>
-                            </td>
-                            <td class="p-2.5 border-r border-slate-100 text-center bg-white">
-                                <div class="flex items-center justify-center gap-1">
-                                    <button onclick="editReferralEntry('${record.id}')" title="Edit Entry" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                    </button>
-                                    <button onclick="deleteReferralEntry('${record.id}')" title="Delete Entry" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                    </button>
-                                </div>
+                            <td class="p-2 border-r border-slate-100 text-center bg-blue-50/30">
+                                <input type="number" step="0.01" data-entity="${entity}" value="${currentRefPrice !== '' ? currentRefPrice : ''}" placeholder="Enter price" class="matrix-input-${safeId(testName)} w-24 bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs text-center focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             </td>
                         `;
                     } else {
-                        rowHtml += `
-                            <td class="p-2.5 border-r border-slate-100 text-center text-slate-300 bg-white">-</td>
-                            <td class="p-2.5 border-r border-slate-100 text-center text-slate-300 bg-white">-</td>
-                        `;
+                        if (record) {
+                            const refPrice = record.referralPrice;
+                            const diffCost = refPrice - baseCost;
+                            const diffBase = refPrice - baseRefPrice;
+
+                            const costClass = diffCost >= 0 ? 'text-emerald-600' : 'text-rose-600';
+                            const baseClass = diffBase >= 0 ? 'text-emerald-600' : 'text-rose-600';
+
+                            const formatDiff = (val) => (val >= 0 ? `+${val.toFixed(2)}` : val.toFixed(2));
+
+                            rowHtml += `
+                                <td class="p-2.5 border-r border-slate-100 text-center bg-white">
+                                    <div class="font-bold text-blue-600">${refPrice.toFixed(2)}</div>
+                                    <div class="text-[10px] text-slate-400 font-medium">
+                                        (<span class="${costClass}">${formatDiff(diffCost)}</span>, <span class="${baseClass}">${formatDiff(diffBase)}</span>)
+                                    </div>
+                                </td>
+                            `;
+                        } else {
+                            rowHtml += `
+                                <td class="p-2.5 border-r border-slate-100 text-center text-slate-300 bg-white">-</td>
+                            `;
+                        }
                     }
                 });
 
@@ -794,6 +821,101 @@
 
             if (filteredCount === 0) {
                 tbody.innerHTML = `<tr><td colspan="100" class="py-8 text-center text-slate-400">No matching records found.</td></tr>`;
+            }
+        }
+
+        function safeId(str) {
+            return str.replace(/[^a-zA-Z0-9]/g, '_');
+        }
+
+        function startMatrixRowEdit(encodedTestName) {
+            editingMatrixRowTest = decodeURIComponent(encodedTestName);
+            renderMatrixView();
+        }
+
+        function cancelMatrixRowEdit() {
+            editingMatrixRowTest = null;
+            renderMatrixView();
+        }
+
+        function saveMatrixRowEdit(encodedTestName, categoryName) {
+            const testName = decodeURIComponent(encodedTestName);
+            const inputClass = `matrix-input-${safeId(testName)}`;
+            const inputs = document.querySelectorAll(`.${inputClass}`);
+
+            // Find base item data
+            let baseItem = null;
+            for (let bId in baseCatalogueData) {
+                if (baseCatalogueData[bId].testName === testName) {
+                    baseItem = baseCatalogueData[bId];
+                    break;
+                }
+            }
+
+            if (!baseItem) {
+                alert("Base item details could not be found.");
+                return;
+            }
+
+            // Existing profile records map for this test
+            const existingProfiles = {};
+            for (let id in referralProfilesData) {
+                const ref = referralProfilesData[id];
+                if (ref.testName === testName) {
+                    existingProfiles[ref.entityName] = id;
+                }
+            }
+
+            const updates = {};
+            inputs.forEach(input => {
+                const entityName = input.getAttribute('data-entity');
+                const val = input.value.trim();
+                const numericVal = parseFloat(val);
+
+                if (val !== '' && !isNaN(numericVal)) {
+                    if (existingProfiles[entityName]) {
+                        // Update existing node
+                        updates[`referralProfiles/${existingProfiles[entityName]}/referralPrice`] = numericVal;
+                    } else {
+                        // Create new profile record
+                        const newRefKey = db.ref('referralProfiles').push().key;
+                        updates[`referralProfiles/${newRefKey}`] = {
+                            entityName: entityName,
+                            categoryName: categoryName,
+                            testName: testName,
+                            cost: baseItem.cost,
+                            baseReferralPrice: baseItem.baseReferralPrice,
+                            referralPrice: numericVal
+                        };
+                    }
+                } else if (val === '' && existingProfiles[entityName]) {
+                    // If cleared, remove entry
+                    db.ref('referralProfiles/' + existingProfiles[entityName]).remove();
+                }
+            });
+
+            if (Object.keys(updates).length > 0) {
+                db.ref().update(updates).then(() => {
+                    editingMatrixRowTest = null;
+                }).catch(err => alert("Error updating records: " + err.message));
+            } else {
+                editingMatrixRowTest = null;
+                renderMatrixView();
+            }
+        }
+
+        function deleteMatrixRowEntries(encodedTestName) {
+            const testName = decodeURIComponent(encodedTestName);
+            if (confirm(`Are you sure you want to delete all referral profile entries for test "${testName}"?`)) {
+                const updates = {};
+                for (let id in referralProfilesData) {
+                    if (referralProfilesData[id].testName === testName) {
+                        updates[`referralProfiles/${id}`] = null;
+                    }
+                }
+                if (Object.keys(updates).length > 0) {
+                    db.ref().update(updates);
+                }
             }
         }
 
