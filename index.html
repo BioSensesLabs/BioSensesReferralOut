@@ -622,14 +622,11 @@
         function updateEntityCheckboxes(allEntities) {
             const container = document.getElementById('entityCheckboxesContainer');
             
-            // Clean up selections that no longer exist
             selectedEntitiesFilter.forEach(ent => {
                 if (!allEntities.includes(ent)) selectedEntitiesFilter.delete(ent);
             });
 
             container.innerHTML = '';
-            
-            // "Select All" / Reset option
             const isAllSelected = selectedEntitiesFilter.size === 0;
 
             allEntities.forEach(entity => {
@@ -655,7 +652,6 @@
             const allEntities = [...new Set(Object.values(referralProfilesData).map(item => item.entityName))];
 
             if (selectedEntitiesFilter.size === 0) {
-                // If previously "All" was selected, clicking one means we start filtering specifically
                 allEntities.forEach(ent => {
                     if (ent !== entity) selectedEntitiesFilter.add(ent);
                 });
@@ -668,7 +664,7 @@
             }
 
             if (selectedEntitiesFilter.size === allEntities.length) {
-                selectedEntitiesFilter.clear(); // Reset to all
+                selectedEntitiesFilter.clear();
             }
 
             updateEntityCheckboxes(allEntities);
@@ -805,10 +801,11 @@
             }
         }
 
-        // --- Excel Export ---
+        // --- FIXED: Full Structured Excel Export ---
         function exportToExcel() {
             const wb = XLSX.utils.book_new();
 
+            // 1. Base Catalogue Sheet
             const baseArray = Object.keys(baseCatalogueData).map(id => ({
                 'Category Name': baseCatalogueData[id].category,
                 'Test Name': baseCatalogueData[id].testName,
@@ -820,16 +817,49 @@
             const wsBase = XLSX.utils.json_to_sheet(baseArray);
             XLSX.utils.book_append_sheet(wb, wsBase, "Base Catalogue");
 
-            const refArray = Object.keys(referralProfilesData).map(id => ({
-                'Entity Name': referralProfilesData[id].entityName,
-                'Category Name': referralProfilesData[id].categoryName,
-                'Test Name': referralProfilesData[id].testName,
-                'Referral Price': referralProfilesData[id].referralPrice
-            }));
-            const wsRef = XLSX.utils.json_to_sheet(refArray);
-            XLSX.utils.book_append_sheet(wb, wsRef, "Referral Profiles");
+            // 2. Referral Matrix Sheet (Structured completely like the Matrix view with computed diffs)
+            const allEntities = [...new Set(Object.values(referralProfilesData).map(item => item.entityName))];
+            const matrixDataMap = {};
+            for (let id in referralProfilesData) {
+                const ref = referralProfilesData[id];
+                if (!matrixDataMap[ref.testName]) matrixDataMap[ref.testName] = {};
+                matrixDataMap[ref.testName][ref.entityName] = ref.referralPrice;
+            }
 
-            XLSX.writeFile(wb, "Catalogue_and_Referral_Data.xlsx");
+            const matrixExportArray = [];
+            for (let bId in baseCatalogueData) {
+                const item = baseCatalogueData[bId];
+                const rowObj = {
+                    'Category Name': item.category,
+                    'Test Name': item.testName,
+                    'Cost': item.cost,
+                    'Base Referral Price': item.baseReferralPrice
+                };
+
+                allEntities.forEach(entity => {
+                    const refPrice = matrixDataMap[item.testName] ? matrixDataMap[item.testName][entity] : undefined;
+                    if (refPrice !== undefined) {
+                        const diffCost = refPrice - item.cost;
+                        const diffBase = refPrice - item.baseReferralPrice;
+                        
+                        const formatVal = (v) => (v >= 0 ? `+${v.toFixed(2)}` : v.toFixed(2));
+                        
+                        rowObj[`${entity} - Ref Price`] = refPrice;
+                        rowObj[`${entity} - Diff (vs Cost, vs Base)`] = `(${formatVal(diffCost)}, ${formatVal(diffBase)})`;
+                    } else {
+                        rowObj[`${entity} - Ref Price`] = '-';
+                        rowObj[`${entity} - Diff (vs Cost, vs Base)`] = '-';
+                    }
+                });
+
+                matrixExportArray.push(rowObj);
+            }
+
+            const wsMatrix = XLSX.utils.json_to_sheet(matrixExportArray);
+            XLSX.utils.book_append_sheet(wb, wsMatrix, "Referral Matrix View");
+
+            // Write File
+            XLSX.writeFile(wb, "Catalogue_and_Referral_Matrix.xlsx");
         }
     </script>
 </body>
